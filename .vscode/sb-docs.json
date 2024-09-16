@@ -1,0 +1,157 @@
+{
+    "@roblox/global/owner": {
+        "documentation": "A reference of [Player](https://create.roblox.com/docs/reference/engine/classes/Player) running the script.",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/variables#owner"
+    },
+
+    "@roblox/global/print": {
+        "documentation": "Prints into the script builder output instead of the Roblox one.\n\nIf the format printing setting is enabled then it will format the message with [repr](https://github.com/Ozzypig/repr).",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#print"
+    },
+    "@roblox/global/warn": {
+        "documentation": "Warns into the script builder output instead of the Roblox one.\n\nIf the format printing setting is enabled then it will format the message with [repr](https://github.com/Ozzypig/repr).",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#warn"
+    },
+    "@roblox/global/error": {
+        "documentation": "Throws an error, if the format printing setting is enabled then it will format the message with [repr](https://github.com/Ozzypig/repr).\n\nScript errors are automatically caught by the script builder and outputted into your output.",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#error"
+    },
+    "@roblox/global/printf": {
+        "documentation": "Prints into the script builder output with richtext enabled, ignoring the format printing setting.",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#printf"
+    },
+    "@roblox/global/warnf": {
+        "documentation": "Warns into the script builder output with richtext enabled, ignoring the format printing setting.",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#warnf"
+    },
+
+    "@roblox/global/LoadLibrary": {
+        "documentation": "A reimplementation of removed Roblox's [LoadLibrary](https://devforum.roblox.com/t/loadlibrary-is-going-to-be-removed-on-february-3rd/382516) feature.\n\nThis includes `RbxGui`, `RbxStamper`, and `RbxUtility`.",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#loadlibrary",
+        "deprecated": true
+    },
+
+    "@roblox/global/LoadAssets": {
+        "documentation": "Loads user-made assets into the sandbox. Similar to `require` but only [prohibited instances](https://docs.lua-sandbox.ewdev.net/script-api/script/functions#blocked-instances) are allowed.",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#loadassets",
+        "params": [
+            {
+                "name": "id",
+                "documentation": "@roblox/global/LoadAssets/param/0"
+            }
+        ]
+    },
+    "@roblox/global/LoadAssets/param/0": {
+        "documentation": "The asset to load. `MainModule` must be [this](https://create.roblox.com/store/asset/17767723528)."
+    },
+
+    "@roblox/global/NewScript": {
+        "documentation": "Creates and returns a new [Script](https://create.roblox.com/docs/reference/engine/classes/Script) with the specified source under the specified parent, with optional run arguments.",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#newscript",
+        "params": [
+            {
+                "name": "source",
+                "documentation": "@roblox/global/NewScript/param/0"
+            },
+            {
+                "name": "parent",
+                "documentation": "@roblox/global/NewScript/param/1"
+            },
+            {
+                "name": "...",
+                "documentation": "@roblox/global/NewScript/param/2"
+            }
+        ],
+        "returns": [
+            "@roblox/global/NewScript/return/0"
+        ]
+    },
+    "@roblox/global/NS": {
+        "documentation": "Creates and returns a new [Script](https://create.roblox.com/docs/reference/engine/classes/Script) with the specified source under the specified parent, with optional run arguments.\n\nAlias for `NewScript`",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#newscript",
+        "params": [
+            {
+                "name": "source",
+                "documentation": "@roblox/global/NewScript/param/0"
+            },
+            {
+                "name": "parent",
+                "documentation": "@roblox/global/NewScript/param/1"
+            },
+            {
+                "name": "...",
+                "documentation": "@roblox/global/NewScript/param/2"
+            }
+        ],
+        "returns": [
+            "@roblox/global/NewScript/return/0"
+        ]
+    },
+    "@roblox/global/NewScript/param/0": {
+        "documentation": "Code to run."
+    },
+    "@roblox/global/NewScript/param/1": {
+        "documentation": "The script to be parented on. Defaults to [`workspace`](https://create.roblox.com/docs/reference/engine/classes/Workspace) if no parent is specified."
+    },
+    "@roblox/global/NewScript/param/2": {
+        "documentation": "Argument(s) that will be passed on the source by variadic operator (...)."
+    },
+    "@roblox/global/NewScript/return/0": {
+        "documentation": "The containtment of the ran code."
+    },
+
+    "@roblox/global/NewLocalScript": {
+        "documentation": "Creates and returns a new [LocalScript](https://create.roblox.com/docs/reference/engine/classes/LocalScript) with the specified source under the specified parent, with optional run arguments.",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#newscript",
+        "params": [
+            {
+                "name": "source",
+                "documentation": "@roblox/global/NewLocalScript/param/0"
+            },
+            {
+                "name": "parent",
+                "documentation": "@roblox/global/NewLocalScript/param/1"
+            },
+            {
+                "name": "...",
+                "documentation": "@roblox/global/NewLocalScript/param/2"
+            }
+        ],
+        "returns": [
+            "@roblox/global/NewLocalScript/return/0"
+        ]
+    },
+    "@roblox/global/NLS": {
+        "documentation": "Creates and returns a new [LocalScript](https://create.roblox.com/docs/reference/engine/classes/LocalScript) with the specified source under the specified parent, with optional run arguments.\n\nAlias for `NewLocalScript`",
+        "learn_more_link": "https://docs.lua-sandbox.ewdev.net/script-api/script/functions#newscript",
+        "params": [
+            {
+                "name": "source",
+                "documentation": "@roblox/global/NewLocalScript/param/0"
+            },
+            {
+                "name": "parent",
+                "documentation": "@roblox/global/NewLocalScript/param/1"
+            },
+            {
+                "name": "...",
+                "documentation": "@roblox/global/NewLocalScript/param/2"
+            }
+        ],
+        "returns": [
+            "@roblox/global/NewLocalScript/return/0"
+        ]
+    },
+    "@roblox/global/NewLocalScript/param/0": {
+        "documentation": "Code to run."
+    },
+    "@roblox/global/NewLocalScript/param/1": {
+        "documentation": "The script to be parented on. Defaults to [owner](https://docs.lua-sandbox.ewdev.net/script-api/script/variables#owner)'s [`PlayerGui`](https://create.roblox.com/docs/reference/engine/classes/PlayerGui) if no parent is specified."
+    },
+    "@roblox/global/NewLocalScript/param/2": {
+        "documentation": "Argument(s) that will be passed on the source by variadic operator (...)."
+    },
+    "@roblox/global/NewLocalScript/return/0": {
+        "documentation": "The containtment of the ran code."
+    }
+}

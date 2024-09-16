@@ -1,0 +1,12 @@
+{
+    "luau-lsp.sourcemap.enabled": false,
+    "luau-lsp.diagnostics.workspace": false,
+    "luau-lsp.require.mode": "relativeToFile",
+
+    "luau-lsp.types.definitionFiles": [
+        "./.vscode/sb-defs.d.luau"
+    ],
+    "luau-lsp.types.documentationFiles": [
+        "./.vscode/sb-docs.json"
+    ]
+}
