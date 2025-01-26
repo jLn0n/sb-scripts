@@ -109,15 +109,15 @@ local function simulate_halonoid(halonoid_data: types.HalonoidData, movement_dir
 
 	-- converts degrees angle to normal y point
 	local max_slope_angle = math.cos(math.rad(math.clamp(char_modifiers.max_slope_angle, 0, 90)))
-	local hipheight_vect = Vector3.new(0, -char_modifiers.hip_height, 0)
+	local hipheight_vect = Vector3.new(0, char_modifiers.hip_height, 0)
 
-	local on_ground_result = Collision.DoGroundCheck(char_simdata.position + hipheight_vect)
+	local on_ground_result = Collision.DoGroundCheck(char_simdata.position - hipheight_vect)
 
 	--If the player is on too steep a slope, its not ground
 	if (on_ground_result ~= nil and on_ground_result.normal.Y < max_slope_angle) then
 		--See if we can move downwards?
 		if (char_simdata.velocity.Y < 0.1) then
-			local stuck = Collision.CheckGroundSlopes(char_simdata.position + hipheight_vect)
+			local stuck = Collision.CheckGroundSlopes(char_simdata.position - hipheight_vect)
 			
 			if (stuck == false) then
 				--we moved, that means the player is on a slope and can free fall
