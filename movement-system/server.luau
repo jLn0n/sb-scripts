@@ -109,7 +109,7 @@ local function simulate_halonoid(halonoid_data: types.HalonoidData, movement_dir
 
 	-- converts degrees angle to normal y point
 	local max_slope_angle = math.cos(math.rad(math.clamp(char_modifiers.max_slope_angle, 0, 90)))
-	local hipheight_vect = Vector3.new(0, char_modifiers.hip_height, 0)
+	local hipheight_vect = Vector3.new(0, -char_modifiers.hip_height, 0)
 
 	local on_ground_result = Collision.DoGroundCheck(char_simdata.position + hipheight_vect)
 
