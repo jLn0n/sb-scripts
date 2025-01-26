@@ -289,7 +289,7 @@ if _character then
 end
 
 remote_registry.send_movement_state = {
-	mode = "reliable",
+	mode = "unreliable",
 	callback = function(sender: Player, state_buff: buffer)
 		if sender.UserId ~= owner.UserId then
 			return

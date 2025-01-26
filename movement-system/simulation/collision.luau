@@ -19,7 +19,7 @@ function module.Sweep(start_pos: Vector3, end_pos: Vector3): types.CollisionResu
 
 	local offset = (end_pos - start_pos)
 	local distance = offset.Magnitude
-	if distance <= 0 or distance >= 1024 then
+	if not (distance >= 0 and distance <= 1024) then
 		return data
 	end
 	
@@ -36,8 +36,6 @@ function module.Sweep(start_pos: Vector3, end_pos: Vector3): types.CollisionResu
 		data.normal = ray_result.Normal
 		data.end_pos = cast_origin + (direction.Unit * ray_result.Distance)
 		data.all_solid = data.start_solid and data.fraction < 0.001
-	else
-		data.end_pos = end_pos
 	end
 	return data
 end
@@ -90,7 +88,7 @@ function module.ProjectVelocity(start_pos: Vector3, start_vel: Vector3, delta_ti
         --Hit!
         time_left -= (time_left * result.fraction)
 
-        if planes[result.normal] == nil then
+        if not planes[result.normal] then
             planes[result.normal] = true
 
             --Deflect the velocity and keep going
@@ -110,7 +108,7 @@ end
 function module.DoGroundCheck(position: Vector3): types.CollisionResult?
     local results = module.Sweep(position + Vector3.new(0, 0.1, 0), position + Vector3.new(0, -0.1, 0))
 
-    if results.all_solid == true or results.start_solid == true then
+    if results.all_solid or results.start_solid then
         --We're stuck, pretend we're in the air
 
         results.fraction = 1
@@ -139,7 +137,7 @@ function module.CheckGroundSlopes(start_pos: Vector3): boolean
 		return false
 	end
 	
-	if result.all_solid == true then
+	if result.all_solid then
 		return true --stuck
 	end
 	
@@ -191,13 +189,13 @@ function module.DoStepUp(step_size: number, max_slope: number, position: Vector3
     local ground = module.DoGroundCheck(step_up_new_pos)
 
     --Slope check
-    if ground ~= nil then
+    if ground then
         if ground.normal.Y < max_slope or ground.start_solid == true then
             return nil
         end
     end
 
-    if ground ~= nil then
+    if ground then
         return {
             step_distance = position.Y - step_up_new_pos.Y,
             position = step_up_new_pos,
@@ -212,9 +210,9 @@ function module.DoStepDown(step_size: number, max_slope: number, position: Vecto
     local hit_result = module.Sweep(position, position - step_vect)
 
     if
-        hit_result.start_solid == false
-        and hit_result.fraction < 1
-        and hit_result.normal.Y >= max_slope
+        not hit_result.start_solid and
+        hit_result.fraction < 1 and
+        hit_result.normal.Y >= max_slope
     then
         local delta = position.Y - hit_result.end_pos.Y
 
