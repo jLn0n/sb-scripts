@@ -117,7 +117,7 @@ local function simulate_halonoid(halonoid_data: types.HalonoidData, movement_dir
 	if (on_ground_result ~= nil and on_ground_result.normal.Y < max_slope_angle) then
 		--See if we can move downwards?
 		if (char_simdata.velocity.Y < 0.1) then
-			local stuck = Collision.CheckGroundSlopes(char_simdata.position)
+			local stuck = Collision.CheckGroundSlopes(char_simdata.position + hipheight_vect)
 			
 			if (stuck == false) then
 				--we moved, that means the player is on a slope and can free fall
@@ -227,7 +227,7 @@ local function simulate_halonoid(halonoid_data: types.HalonoidData, movement_dir
 
 	--Sweep the player through the world, once flat along the ground, and once "step up'd"
     local step_up_result = nil
-    local new_walk_pos, new_walk_vel, hit_something = Collision.ProjectVelocity(char_simdata.position, char_simdata.velocity, delta_time)
+    local new_walk_pos, new_walk_vel, hit_something = Collision.ProjectVelocity(char_simdata.position + hipheight_vect, char_simdata.velocity, delta_time)
 
     --Did we crashland
     if on_ground_result == nil and hit_something == true then
@@ -242,7 +242,7 @@ local function simulate_halonoid(halonoid_data: types.HalonoidData, movement_dir
 	
     -- Do we attempt a stepup? (not jumping!)
     if on_ground_result ~= nil and hit_something == true and char_simdata.jump_debounce == 0 then
-        step_up_result = Collision.DoStepUp(max_slope_angle, char_simdata.position, char_simdata.velocity, delta_time)
+        step_up_result = Collision.DoStepUp(max_slope_angle, char_simdata.position + hipheight_vect, char_simdata.velocity, delta_time)
     end
 
     --Choose which one to use, either the original move or the stepup
@@ -258,7 +258,7 @@ local function simulate_halonoid(halonoid_data: types.HalonoidData, movement_dir
     --Do stepDown
     if true then
         if char_simdata.started_on_ground ~= nil and char_simdata.jump_debounce == 0 and char_simdata.velocity.Y <= 0 then
-            local step_down_result = Collision.DoStepDown(max_slope_angle, char_simdata.position)
+            local step_down_result = Collision.DoStepDown(max_slope_angle, char_simdata.position + hipheight_vect)
 
             if step_down_result ~= nil then
 				char_simdata.step_up = step_down_result.step_distance
