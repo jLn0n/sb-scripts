@@ -327,7 +327,7 @@ RunService.PostSimulation:Connect(function(delta_time)
 	simulate_halonoid(halonoid_data, movement_dir, delta_time)
 
 	-- applying processed position
-	_character:PivotTo(control_cframe + halonoid_data.simulation.position)
+	_character:PivotTo(control_cframe + halonoid_data.simulation.position + Vector3.new(0, 2, 0))
 end)
 
 -- post-init

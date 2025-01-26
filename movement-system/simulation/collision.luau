@@ -4,6 +4,10 @@ local MathUtils = require("@movement-system/simulation/math_utils")
 local COLLISION_SHIFTBACK = 1
 local COLLISION_SIZE = Vector3.new(3, 5, 3)
 
+local COLLISION_CASTPARAMS = RaycastParams.new()
+COLLISION_CASTPARAMS.RespectCanCollide = true
+COLLISION_CASTPARAMS.IgnoreWater = true
+
 local module = {}
 
 function module.Sweep(start_pos: Vector3, end_pos: Vector3): types.CollisionResult
@@ -28,7 +32,8 @@ function module.Sweep(start_pos: Vector3, end_pos: Vector3): types.CollisionResu
 	local ray_result = workspace:Blockcast(
 		CFrame.identity + (cast_origin),
 		COLLISION_SIZE,
-		direction * (distance + COLLISION_SHIFTBACK)
+		direction * (distance + COLLISION_SHIFTBACK),
+        COLLISION_CASTPARAMS
 	)
 
 	if ray_result then
