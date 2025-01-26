@@ -4,7 +4,7 @@ local REPO_OWNER = "jLn0n"
 local REPO_NAME = "sb-scripts"
 local PATH_KEYWORD = "movement-system"
 
-local current_commit_id: string = "main"
+local current_commit_hash: string
 
 local function directory_url_format(commit_id: string, path: string): string
 	return `https://github.com/{REPO_OWNER}/{REPO_NAME}/blob/{commit_id}/{path}?raw=true`
@@ -20,14 +20,24 @@ local function fetch_url(url: string, no_cache: boolean): string?
 	return result
 end
 
-local function get_latest_commit_hash(): string
-	local commit_data_raw = fetch_url(`https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/commits/main`, true)
-	if not commit_data_raw then
-		return "main"
+local function get_latest_commit_hash(branch: string): (string, string?)
+	local branches_raw = fetch_url(`https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/branches`, true)
+	if not branches_raw then
+		return branch, nil
 	end
 
-	local commit_data = HttpService:JSONDecode(commit_data_raw)
-	return commit_data.sha
+	local branches = HttpService:JSONDecode(branches_raw)
+	local commit_hash: string
+	for _, branch_data in branches do
+		if branch_data.name ~= branch then
+			continue
+		end
+
+		commit_hash = branch_data.commit.sha
+		break
+	end
+
+	return branch, commit_hash
 end
 
 local __import_cache = {}
@@ -37,7 +47,7 @@ local function import_dir(path: string): any
 	if not loaded_module then
 		print(`loading script of path '{REPO_NAME}/{sure_path}'`)
 
-		local module_src = fetch_url(directory_url_format(current_commit_id, sure_path), true)
+		local module_src = fetch_url(directory_url_format(current_commit_hash, sure_path), true)
 		if not module_src then
 			return
 		end
@@ -69,11 +79,17 @@ end):: any
 getfenv().require = j_require
 
 do
-	print(`fetching commit id of 'github/{REPO_OWNER}/{REPO_NAME}'`)
-	current_commit_id = get_latest_commit_hash()
+	print(`fetching commit hash of 'github/{REPO_OWNER}/{REPO_NAME}'`)
 
-	print(`successfully fetched, commit id: '{current_commit_id}'{if current_commit_id == "main" then " (fetching latest commit id failed)" else ""}`)
-	
+	local branch_parent, fetched_hash = get_latest_commit_hash("main")
+	if fetched_hash then
+		print(`successfully fetched, commit hash: '{fetched_hash}'`)
+		current_commit_hash = fetched_hash
+	else
+		warn("failed to fetch latest commit hash, defaulting to main")
+		current_commit_hash = branch_parent
+	end
+
 	print("movement system server loading...")
 	require("@movement-system/server")
 end

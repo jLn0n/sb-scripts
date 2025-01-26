@@ -1,4 +1,5 @@
 -- should always be lua 5.1 compatible
+-- TODO: use luau and get this transpiled through darklua in github actions
 print("client waiting")
 repeat task.wait() until script:GetAttribute("server_ready")
 
