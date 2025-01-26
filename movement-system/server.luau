@@ -28,7 +28,7 @@ local halonoid_data: types.HalonoidData = {
 		gravity = 196.2,
 		walk_speed = 16,
 		jump_height = 7.6,
-		hip_height = 2,
+		step_size = 2,
 		max_slope_angle = 89,
 	},
 
@@ -103,21 +103,20 @@ local function get_movement_dir(look_vect: Vector3, right_vect: Vector3): Vector
 end
 
 local function simulate_halonoid(halonoid_data: types.HalonoidData, movement_dir: Vector3, delta_time: number)
-	local char_control_state = halonoid_data.pressed_controls
-	local char_simdata = halonoid_data.simulation
-	local char_modifiers = halonoid_data.modifiers
+	local control_state = halonoid_data.pressed_controls
+	local simulation_data = halonoid_data.simulation
+	local modifiers = halonoid_data.modifiers
 
 	-- converts degrees angle to normal y point
-	local max_slope_angle = math.cos(math.rad(math.clamp(char_modifiers.max_slope_angle, 0, 90)))
-	local hipheight_vect = Vector3.new(0, char_modifiers.hip_height, 0)
+	local max_slope_angle = math.cos(math.rad(math.clamp(modifiers.max_slope_angle, 0, 90)))
 
-	local on_ground_result = Collision.DoGroundCheck(char_simdata.position - hipheight_vect)
+	local on_ground_result = Collision.DoGroundCheck(simulation_data.position)
 
 	--If the player is on too steep a slope, its not ground
-	if (on_ground_result ~= nil and on_ground_result.normal.Y < max_slope_angle) then
+	if (on_ground_result and on_ground_result.normal.Y < max_slope_angle) then
 		--See if we can move downwards?
-		if (char_simdata.velocity.Y < 0.1) then
-			local stuck = Collision.CheckGroundSlopes(char_simdata.position - hipheight_vect)
+		if (simulation_data.velocity.Y < 0.1) then
+			local stuck = Collision.CheckGroundSlopes(simulation_data.position)
 			
 			if (stuck == false) then
 				--we moved, that means the player is on a slope and can free fall
@@ -134,138 +133,140 @@ local function simulate_halonoid(halonoid_data: types.HalonoidData, movement_dir
 
 	--Create flat velocity to operate our input command on
 	--In theory this should be relative to the ground plane instead...
-	local flat_vel = MathUtils.FlatVector(char_simdata.velocity)
+	local flat_vel = MathUtils.FlatVector(simulation_data.velocity)
 
 	--Mark if we were onground at the start of the frame
-	char_simdata.started_on_ground = on_ground_result
+	simulation_data.started_on_ground = on_ground_result
 		
 	--Simplify - whatever we are at the start of the frame goes.
-	char_simdata.last_ground = on_ground_result
+	simulation_data.last_ground = on_ground_result
 
 	 --Did the player have a movement request?
 	 local direction_wish: Vector3
-	 if movement_dir.X ~= 0 or movement_dir.Z ~= 0 then
+	 if movement_dir.Magnitude > 0 then
 		direction_wish = MathUtils.FlatVector(movement_dir).Unit
-		char_simdata.push_direction = Vector2.new(movement_dir.X, movement_dir.Z)
+		simulation_data.push_direction = Vector2.new(movement_dir.X, movement_dir.Z)
 	 else
-		char_simdata.push_direction = Vector2.zero
+		simulation_data.push_direction = Vector2.zero
 	 end
 
 	if direction_wish then
-		if on_ground_result ~= nil then
+		if on_ground_result then
 			--Moving along the ground under player input
 			flat_vel = MathUtils.GroundAccelerate(
 				direction_wish,
-				char_modifiers.walk_speed,
+				modifiers.walk_speed,
 				40,
 				flat_vel,
 				delta_time
 			)
 		else
 			--Moving through the air under player control
-			flat_vel = MathUtils.Accelerate(direction_wish, char_modifiers.walk_speed, 10, flat_vel, delta_time)
+			flat_vel = MathUtils.Accelerate(direction_wish, modifiers.walk_speed, 10, flat_vel, delta_time)
 		end
 	else
-		if on_ground_result ~= nil then
+		if on_ground_result then
 			--Just standing around
 			flat_vel = MathUtils.VelocityFriction(flat_vel, 0.02, delta_time)
 		end
 	end
 
 	--Turn out flatvel back into our vel
-	char_simdata.velocity = Vector3.new(flat_vel.X, char_simdata.velocity.Y, flat_vel.Z)
+	simulation_data.velocity = Vector3.new(flat_vel.X, simulation_data.velocity.Y, flat_vel.Z)
 
 	--Do jumping?
-	if char_simdata.jump_debounce > 0 then
-		char_simdata.jump_debounce -= delta_time
-		if char_simdata.jump_debounce < 0 then
-			char_simdata.jump_debounce = 0
+	if simulation_data.jump_debounce > 0 then
+		simulation_data.jump_debounce -= delta_time
+		if simulation_data.jump_debounce < 0 then
+			simulation_data.jump_debounce = 0
 		end
 	end
 
-	if on_ground_result ~= nil then
+	if on_ground_result then
 		--jump!
-		if char_control_state.jump and char_simdata.jump_debounce <= 0 then
-			char_simdata.velocity = Vector3.new(
-				char_simdata.velocity.X,
-				math.sqrt(char_modifiers.jump_height * (2 * char_modifiers.gravity)),
-				char_simdata.velocity.Z
+		if control_state.jump and simulation_data.jump_debounce <= 0 then
+			simulation_data.velocity = Vector3.new(
+				simulation_data.velocity.X,
+				math.sqrt(modifiers.jump_height * (2 * modifiers.gravity)),
+				simulation_data.velocity.Z
 			)
-			char_simdata.jump_debounce = 0.2 --jumping has a cooldown (think jumping up a staircase)
+			simulation_data.jump_debounce = 0.2 --jumping has a cooldown (think jumping up a staircase)
 		end
 	end
 
 	--In air?
-	if on_ground_result == nil then
-		char_simdata.air_time += delta_time
-		if char_simdata.air_time > 10 then
-			char_simdata.air_time = 10 --Capped just to keep the state var reasonable
+	if not on_ground_result then
+		simulation_data.air_time += delta_time
+		if simulation_data.air_time > 10 then
+			simulation_data.air_time = 10 --Capped just to keep the state var reasonable
 		end
 
 		--Jump thrust
-		if char_control_state.jump then
-			if char_simdata.jump_thrust > 0 then
-				char_simdata.velocity += Vector3.new(0, char_simdata.jump_thrust * delta_time, 0)
-				char_simdata.jump_thrust = MathUtils.Friction(
-					char_simdata.jump_thrust,
+		if control_state.jump then
+			if simulation_data.jump_thrust > 0 then
+				simulation_data.velocity += Vector3.new(0, simulation_data.jump_thrust * delta_time, 0)
+				simulation_data.jump_thrust = MathUtils.Friction(
+					simulation_data.jump_thrust,
 					0, -- jump thrust decay
 					delta_time
 				)
 			end
-			if char_simdata.jump_thrust < 0.001 then
-				char_simdata.jump_thrust = 0
+			if simulation_data.jump_thrust < 0.001 then
+				simulation_data.jump_thrust = 0
 			end
 		else
-			char_simdata.jump_thrust = 0
+			simulation_data.jump_thrust = 0
 		end
 
 		--gravity
-		char_simdata.velocity += Vector3.new(0, -char_modifiers.gravity * delta_time, 0)
+		simulation_data.velocity += Vector3.new(0, -modifiers.gravity * delta_time, 0)
 	else
-		char_simdata.air_time = 0
+		simulation_data.air_time = 0
 	end
 
 	--Sweep the player through the world, once flat along the ground, and once "step up'd"
     local step_up_result = nil
-    local new_walk_pos, new_walk_vel, hit_something = Collision.ProjectVelocity(char_simdata.position, char_simdata.velocity, delta_time)
+    local new_walk_pos, new_walk_vel, hit_something = Collision.ProjectVelocity(simulation_data.position, simulation_data.velocity, delta_time)
 
     --Did we crashland
-    if on_ground_result == nil and hit_something == true then
+    if (not on_ground_result) and hit_something then
         --Land after jump
         local groundCheck = Collision.DoGroundCheck(new_walk_pos)
 
-        if groundCheck ~= nil then
+        if groundCheck then
             --Crashland
-			new_walk_vel = Collision.CrashLand(char_simdata.angle_yaw, new_walk_vel, groundCheck)
+			new_walk_vel = Collision.CrashLand(simulation_data.angle_yaw, new_walk_vel, groundCheck)
         end
     end
 	
     -- Do we attempt a stepup? (not jumping!)
-    if on_ground_result ~= nil and hit_something == true and char_simdata.jump_debounce == 0 then
-        step_up_result = Collision.DoStepUp(max_slope_angle, char_simdata.position, char_simdata.velocity, delta_time)
+    if on_ground_result and hit_something and simulation_data.jump_debounce <= 0.01 then
+        step_up_result = Collision.DoStepUp(modifiers.step_size,max_slope_angle, simulation_data.position, simulation_data.velocity, delta_time)
     end
 
     --Choose which one to use, either the original move or the stepup
-    if step_up_result ~= nil then
-		char_simdata.step_up = step_up_result.step_distance
-		char_simdata.position = step_up_result.position
-		char_simdata.velocity = step_up_result.velocity
+    if step_up_result then
+		simulation_data.step_up = step_up_result.step_distance
+		simulation_data.position = step_up_result.position
+		simulation_data.velocity = step_up_result.velocity
     else
-		char_simdata.position = new_walk_pos
-		char_simdata.velocity = new_walk_vel
+		simulation_data.position = new_walk_pos
+		simulation_data.velocity = new_walk_vel
     end
 
     --Do stepDown
-    if true then
-        if char_simdata.started_on_ground ~= nil and char_simdata.jump_debounce == 0 and char_simdata.velocity.Y <= 0 then
-            local step_down_result = Collision.DoStepDown(max_slope_angle, char_simdata.position)
+	if simulation_data.started_on_ground and simulation_data.jump_debounce <= 0.01 and simulation_data.velocity.Y <= 0 then
+		local step_down_result = Collision.DoStepDown(
+			modifiers.step_size,
+			max_slope_angle,
+			simulation_data.position
+		)
 
-            if step_down_result ~= nil then
-				char_simdata.step_up = step_down_result.step_distance
-				char_simdata.position = step_down_result.position
-            end
-        end
-    end
+		if step_down_result then
+			simulation_data.step_up = step_down_result.step_distance
+			simulation_data.position = step_down_result.position
+		end
+	end
 end
 
 -- init

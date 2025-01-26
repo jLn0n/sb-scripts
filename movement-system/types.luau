@@ -17,7 +17,7 @@ export type HalonoidModifiers = {
     gravity: number,
     walk_speed: number,
     jump_height: number,
-    hip_height: number,
+    step_size: number,
     max_slope_angle: number,
 }
 

@@ -170,10 +170,10 @@ function module.CrashLand(angle: number, velocity: Vector3, ground: types.Collis
     return Vector3.new(0, 0, 0)
 end
 
-function module.DoStepUp(max_slope: number, position: Vector3, velocity: Vector3, delta_time: number): types.StepUpResult?
+function module.DoStepUp(step_size: number, max_slope: number, position: Vector3, velocity: Vector3, delta_time: number): types.StepUpResult?
     local flat_velocity = MathUtils.FlatVector(velocity)
 
-    local step_vect = Vector3.new(0, 2.2 --[[step size here]], 0)
+    local step_vect = Vector3.new(0, step_size, 0)
     --first move upwards as high as we can go
 
     local collision_head_hit = module.Sweep(position, position + step_vect)
@@ -207,8 +207,8 @@ function module.DoStepUp(max_slope: number, position: Vector3, velocity: Vector3
     return nil
 end
 
-function module.DoStepDown(max_slope: number, position: Vector3): types.StepDownResult?
-    local step_vect = Vector3.new(0, 2.2 --[[step size here]], 0)
+function module.DoStepDown(step_size: number, max_slope: number, position: Vector3): types.StepDownResult?
+    local step_vect = Vector3.new(0, step_size, 0)
     local hit_result = module.Sweep(position, position - step_vect)
 
     if
