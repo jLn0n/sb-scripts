@@ -1,0 +1,16 @@
+{
+    "luau-lsp.sourcemap.enabled": false,
+    "luau-lsp.diagnostics.workspace": true,
+    "luau-lsp.completion.imports.requireStyle": "alwaysRelative",
+
+    "luau-lsp.types.definitionFiles": [
+        "./.defs/sb-defs.d.luau"
+    ],
+    "luau-lsp.types.documentationFiles": [
+        "./.defs/sb-docs.json"
+    ],
+    "luau-lsp.bytecode.typeInfoLevel": 1,
+    "luau-lsp.bytecode.debugLevel": 2,
+    "luau-lsp.fflags.enableNewSolver": false,
+    "luau-lsp.completion.autocompleteEnd": true
+}
