@@ -1,7 +1,7 @@
 local HttpService = game:GetService("HttpService")
 
 local REPO_OWNER = "jLn0n"
-local REPO_NAME = "sb_scripts"
+local REPO_NAME = "sb-scripts"
 local PATH_KEYWORD = "movement-system"
 
 local current_commit_id: string = "main"
@@ -14,7 +14,7 @@ local function fetch_url(url: string, no_cache: boolean): string?
 	local success, result = pcall(HttpService.GetAsync, HttpService, url, no_cache)
 
 	if not success then
-		warn(`Failed to load URL '{url}'\n{result}`)
+		warn(`Failed to load URL '{url}'{"\n"}{result}`)
 		return nil
 	end
 	return result
