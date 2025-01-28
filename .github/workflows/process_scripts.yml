@@ -31,7 +31,7 @@ jobs:
         id: process_scripts
         run: node .github/workflows/script_processor.js
         env:
-          USER_GIST_PAT: ${{ secrets.USER_GIST_PAT }}
+          USER_GIST_PAT: ${{ secrets.production.USER_GIST_PAT }}
 
       - name: Upload output of processed scripts
         if: steps.process_scripts.outcome == 'success'
