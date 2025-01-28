@@ -28,14 +28,10 @@ jobs:
       - run: npm install @actions/github @actions/core
 
       - name: Process ./scripts/* directory
+        id: process_scripts
+        run: node .github/workflows/script_processor.js
         env:
           USER_GIST_PAT: ${{ secrets.USER_GIST_PAT }}
-        id: process_scripts
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const path = require("path");
-            return require(path.resolve(".github/workflows/script_processor.js"))(context, core)
 
       - name: Upload output of processed scripts
         if: steps.process_scripts.outcome == 'success'
