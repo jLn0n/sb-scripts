@@ -1,5 +1,5 @@
-local types = require("@movement-system/simulation/types")
-local MathUtils = require("@movement-system/simulation/math_utils")
+local types = require("./types")
+local MathUtils = require("./math_utils")
 
 local COLLISION_SHIFTBACK = 1
 local COLLISION_SIZE = Vector3.new(3, 5, 3)

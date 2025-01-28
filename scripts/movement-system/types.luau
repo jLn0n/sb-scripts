@@ -1,4 +1,4 @@
-local SimulationTypes = require("@movement-system/simulation/types")
+local SimulationTypes = require("./simulation/types")
 
 export type ShittyRemoteConfig = {
     mode: "reliable" | "unreliable",
