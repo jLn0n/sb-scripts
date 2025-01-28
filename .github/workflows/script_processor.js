@@ -93,7 +93,7 @@ const process_script_dir = (script_dir) => {
 
 module.exports = function(_github, context, core) {
 	github = _github;
-	console.log(github)
+	console.log(github, github.rest.gists);
 	const scripts_dir = path.resolve("scripts");
 
 	for (let dir of fs.readdirSync(scripts_dir)) {
