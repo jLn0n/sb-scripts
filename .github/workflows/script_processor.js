@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const child_proc = require("child_process");
 
-module.exports = function(_github, context, core) {
+module.exports = function(github, context, core) {
 	const upload_scripts = (script_dir, output_dirs, gist_id) => {
 		const files = {}
 
