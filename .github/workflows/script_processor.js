@@ -13,7 +13,7 @@ module.exports = function(context, core) {
 			}
 		}
 		try {
-			const gist_tok = core.getInput("GH_GIST_TOK");
+			const gist_tok = core.getInput("USER_GIST_PAT");
 			const octokit = github.getOctokit({
 				auth: gist_tok,
 			});
