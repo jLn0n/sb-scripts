@@ -1,0 +1,116 @@
+name: Darklua building
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout
+
+      - name: Fetch Darklua
+        run: |
+          curl -L "https://github.com/seaofvoices/darklua/releases/download/v0.16.0/darklua-linux-x86_64.zip" -o darklua.zip
+          unzip darklua.zip
+          chmod +x darklua
+
+      - name: Process ./scripts
+        id: process_scripts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const path = require("path");
+            const child_proc = require('child_process');
+            
+            const branch_dir = context.matrix.directory;
+            const scripts_dir = path.join(branch_dir, "scripts");
+            
+            const _output = []
+            
+            const process_script_dir = (directory) => {
+              const output_dirs = [];
+              let scripts_name;
+            
+              const config_file_dir = path.join(directory, "config.json");
+              if (!fs.existsSync(config_file_dir)) {
+                console.log(`No config.json exists in directory: '${directory}'`)
+                return;
+              }
+            
+              const config_data = JSON.parse(fs.readFileSync(config_file_dir, 'utf8')) || {};
+              scripts_name = config_data.name;
+            
+              if (typeof scripts_name !== "string") {
+                console.log(`Name not provided on '${config_file_dir}', skipping...`);
+                return;
+              }
+            
+              console.log(`Processing scripts '${scripts_name}' on directory: '${directory}'`);
+            
+              if (typeof config_data.darklua_config !== "string") {
+                console.log("Darklua config file not specified (or not string), skipping...");
+                return;
+              }
+              if (config_data.process_files.length < 1) {
+                console.log("There are no files to process, skipping...");
+                return;
+              }
+            
+              const full_darklua_config_dir = path.join(directory, config_data.darklua_config);
+            
+              if (fs.existsSync(full_darklua_config_dir)) {
+                let process_count = 0
+            
+                for (let file_dir of config_data.process_files) {
+                  const full_file_dir = path.join(directory, file_dir);
+                  if (!fs.existsSync(full_file_dir)) {
+                    console.log(`File '${file_dir}' from directory '${directory}' not found, skipping...`)
+                    continue;
+                  }
+            
+                  const output_dir = path.join("output", file_dir);
+                  const command = `./darklua process ${full_file_dir} ${output_dir} -c ${full_darklua_config_dir}`;
+            
+                  child_proc.exec(command, (cmd_err, stdout, stderr) => {
+                    if (cmd_err) {
+                      console.error(`Darklua errored with file '${file_dir}':`, cmd_err);
+                    } else {
+                      process_count += 1;
+                      console.log(`Darklua processing succeed, file is now saved at '${output_dir}'`);
+                      output_dirs.push(output_dir)
+                    }
+                  });
+                }
+            
+                console.log(`[${process_count}/${config_data.process_files.length}] files processed.`);
+              }
+              return scripts_name, output_dirs;
+            }
+            
+            for (let dir of fs.readdirSync(scripts_dir)) {
+              const [scripts_name, output_dirs] = process_script_dir(path.join(scripts_dir, dir));
+              if (typeof scripts_name !== "string") {
+                continue;
+              }
+            
+              _output = _output.concat(output_dirs)
+            }
+            
+            core.setOutput('scripts_dirs', JSON.stringify(_output));
+
+      - name: Upload Processed Outputs of ./scripts
+        if: steps.process_scripts.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: scripts_output
+          path: |
+            ${{ fromJson(steps.process_scripts.outputs.output_files) }}
+          retention-days: 7
+
