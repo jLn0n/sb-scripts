@@ -4,7 +4,8 @@ const child_proc = require("child_process");
 const github = require("@actions/github")
 
 module.exports = function(_github, context, core) {
-	console.log("imported octokit:", github)
+	const octokit = github.getOctokit()
+	console.log("imported octokit:", octokit, github)
 	console.log("provided octokit:", _github)
 
 	const upload_scripts = (script_dir, output_dirs, gist_id) => {
