@@ -46,16 +46,15 @@ const process_script_dir = (script_dir) => {
 			const output_dir = path.resolve("_output", scripts_name, file_dir);
 			const command = `./darklua process ${full_file_dir} ${output_dir} -c ${full_darklua_config_dir}`;
 
-			child_proc.exec(command, (cmd_err, _stdout, _stderr) => {
-				if (cmd_err) {
-					console.error(`Darklua errored with file '${file_dir}':`, cmd_err);
-					return
-				}
+			try {
+				child_proc.execSync(command)
 
 				process_count += 1;
 				console.log(`Darklua processing succeed, file is now saved at '${output_dir}'`);
 				output_dirs.push(output_dir)
-			});
+			} catch (cmd_err) {
+				console.error(`Darklua errored with file '${file_dir}':`, cmd_err);
+			}
 		}
 
 		console.log(`[${process_count}/${config_data.process_files.length}] files processed.`);
