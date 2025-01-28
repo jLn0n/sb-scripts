@@ -12,7 +12,7 @@ module.exports = function(github, context, core) {
 			}
 		}
 
-		github.request(`PATCH /gists/${gist_id}`, {
+		github.gist.request(`PATCH /gists/${gist_id}`, {
 			gist_id: gist_id,
 			description: `${script_dir} (https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}) - processed`,
 			files: files,
@@ -85,7 +85,7 @@ module.exports = function(github, context, core) {
 		if (typeof config_data.gist_id === "string") {
 			if (_process_count === config_data.process_files.length) {
 				console.log("Gist id found & all requested files got processed successfully! Uploading...")
-				upload_scripts(path.join(path.dirname(script_dir), scripts_name), output_dirs, config_data.gist_id)
+				upload_scripts(path.join(path.basename(script_dir), scripts_name), output_dirs, config_data.gist_id)
 			} else {
 				console.warn("Gist id exist, but all requested files didn't got processed successfully. Skipping...")
 			}
