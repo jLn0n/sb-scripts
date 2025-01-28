@@ -12,7 +12,7 @@ module.exports = function(github, context, core) {
 			}
 		}
 
-		github.gists.request(`PATCH /gists/${gist_id}`, {
+		github.rest.gists.request(`PATCH /gists/${gist_id}`, {
 			gist_id: gist_id,
 			description: `${script_dir} (https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}) - processed`,
 			files: files,
@@ -66,15 +66,15 @@ module.exports = function(github, context, core) {
 				continue;
 			}
 
-			const output_dir = path.resolve("_output", scripts_name, file_dir);
-			const command = `./darklua process ${full_file_dir} ${output_dir} -c ${full_darklua_config_dir}`;
+			const file_outdir = path.resolve("_output", scripts_name, file_dir);
+			const command = `./darklua process ${full_file_dir} ${file_outdir} -c ${full_darklua_config_dir}`;
 
 			try {
 				child_proc.execSync(command)
 
 				_process_count += 1;
-				console.log(`Darklua processing succeed, file is now saved at '${output_dir}'`);
-				output_dirs.push(output_dir)
+				console.log(`Darklua processing of '${path.join(path.basename(script_dir), file_dir)}' succeeded, file is now saved at '${file_outdir}'`);
+				output_dirs.push(file_outdir)
 			} catch (cmd_err) {
 				console.error(`Darklua errored with file '${file_dir}':`, cmd_err);
 			}
