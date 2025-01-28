@@ -34,6 +34,6 @@ jobs:
         with:
           name: scripts_output
           path: |
-            ${{ fromJson(steps.process_scripts.outputs.output_files) }}
+            ${{ fromJson(steps.process_scripts.outputs.*) }}
           retention-days: 7
 
