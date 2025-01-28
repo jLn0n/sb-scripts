@@ -2,6 +2,24 @@ const fs = require("fs");
 const path = require("path");
 const child_proc = require("child_process");
 
+
+const upload_scripts = (scripts_dir, output_dirs, gist_id) => {
+	const file_names = []
+	const file_contents = []
+
+	for (let output_dir of output_dirs) {
+		file_names.push(path.basename(output_dir))
+		file_contents.push(fs.readFileSync(output_dir).toString("utf-8"))
+	}
+
+	github.rest.gists.upload(
+		gist_id,
+		`'${scripts_dir}' (https://github.com/jLn0n/sb-scripts) - processed`,
+		file_names,
+		file_contents
+	);
+}
+
 const process_script_dir = (script_dir) => {
 	const output_dirs = [];
 	let scripts_name;
@@ -32,35 +50,43 @@ const process_script_dir = (script_dir) => {
 	}
 
 	const full_darklua_config_dir = path.join(script_dir, config_data.darklua_config);
-
-	if (fs.existsSync(full_darklua_config_dir)) {
-		let process_count = 0
-
-		for (let file_dir of config_data.process_files) {
-			const full_file_dir = path.join(script_dir, file_dir);
-			if (!fs.existsSync(full_file_dir)) {
-				console.log(`File '${file_dir}' from directory '${script_dir}' not found, skipping...`)
-				continue;
-			}
-
-			const output_dir = path.resolve("_output", scripts_name, file_dir);
-			const command = `./darklua process ${full_file_dir} ${output_dir} -c ${full_darklua_config_dir}`;
-
-			try {
-				child_proc.execSync(command)
-
-				process_count += 1;
-				console.log(`Darklua processing succeed, file is now saved at '${output_dir}'`);
-				output_dirs.push(output_dir)
-			} catch (cmd_err) {
-				console.error(`Darklua errored with file '${file_dir}':`, cmd_err);
-			}
-		}
-
-		console.log(`[${process_count}/${config_data.process_files.length}] files processed.`);
-	} else {
+	if (!fs.existsSync(full_darklua_config_dir)) {
 		console.log("Darklua config file not found, skipping...")
 		return;
+	}
+
+	let _process_count = 0
+
+	for (let file_dir of config_data.process_files) {
+		const full_file_dir = path.join(script_dir, file_dir);
+		if (!fs.existsSync(full_file_dir)) {
+			console.log(`File '${file_dir}' from directory '${script_dir}' not found, skipping...`)
+			continue;
+		}
+
+		const output_dir = path.resolve("_output", scripts_name, file_dir);
+		const command = `./darklua process ${full_file_dir} ${output_dir} -c ${full_darklua_config_dir}`;
+
+		try {
+			child_proc.execSync(command)
+
+			_process_count += 1;
+			console.log(`Darklua processing succeed, file is now saved at '${output_dir}'`);
+			output_dirs.push(output_dir)
+		} catch (cmd_err) {
+			console.error(`Darklua errored with file '${file_dir}':`, cmd_err);
+		}
+	}
+
+	console.log(`[${_process_count}/${config_data.process_files.length}] files processed.`);
+
+	if (typeof config_data.gist_id === "string") {
+		if (_process_count === config_data.process_files.length) {
+			console.log("Gist id found & all requested files got processed successfully! Uploading...")
+			upload_scripts(path.join(path.dirname(script_dir), scripts_name), output_dirs, config_data.gist_id)
+		} else {
+			console.warn("Gist id exist, but all requested files didn't got processed successfully. Skipping...")
+		}
 	}
 	return scripts_name, output_dirs;
 }

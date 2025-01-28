@@ -5,7 +5,7 @@
 		"./server.luau",
 		"./client.luau"
 	],
-	"gist_id": "gist id here yes",
+	"gist_id": "fe59b29cb2d0d6a26273a892dcfd104a",
 
 	"darklua_config": "./.config/dev.darklua.json5"
 }
