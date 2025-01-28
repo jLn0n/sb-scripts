@@ -7,6 +7,6 @@
   "typeErrors": true,
   "globals": [],
   "aliases": {
-    "movement-system": "./scripts/movement-system"
+    "shared": "./modules"
   }
 }

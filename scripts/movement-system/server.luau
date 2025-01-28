@@ -1,4 +1,3 @@
-local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
 local remotes_container = Instance.new("Folder")
@@ -8,9 +7,11 @@ local character_container = Instance.new("WorldModel")
 character_container.Name = "character store thing"
 character_container.Parent = script
 
-local types = require("@movement-system/types")
-local Collision = require("@movement-system/simulation/collision")
-local MathUtils = require("@movement-system/simulation/math_utils")
+local gist_loader = require("@shared/gist-loader")
+
+local types = require("./types")
+local Collision = require("./simulation/collision")
+local MathUtils = require("./simulation/math_utils")
 
 local MOVEMENT_ORDER = {
 	"forward",
@@ -53,16 +54,6 @@ local halonoid_data: types.HalonoidData = {
 		jump_thrust = 0,
 	}
 }
-
-local function fetch_url(url: string, no_cache: boolean): string?
-	local success, result = pcall(HttpService.GetAsync, HttpService, url, no_cache)
-
-	if not success then
-		warn(`Failed to load URL '{url}'\n{result}`)
-		return nil
-	end
-	return result
-end
 
 local function decode_movement_state(packed_state: number): types.HalonoidControlState
 	local result = {}
@@ -332,7 +323,8 @@ end)
 
 -- post-init
 print("fetching client script")
-local client_script_raw = fetch_url("https://github.com/jLn0n/sb-scripts/blob/main/movement-system/client.luau?raw=true", true)
+local gist_obj = gist_loader("jLn0n", "fe59b29cb2d0d6a26273a892dcfd104a")
+local client_script_raw = gist_obj.fetch("client.luau", true)
 local client_script = NLS(client_script_raw or "error('client script failed to load!')", owner:FindFirstChildWhichIsA("PlayerGui"))
 print("client ran")
 
