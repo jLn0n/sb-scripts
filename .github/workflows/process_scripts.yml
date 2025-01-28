@@ -33,6 +33,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: scripts_output
-          path: ./_outputs/
+          path: ./_output/
           retention-days: 7
 

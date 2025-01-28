@@ -66,17 +66,9 @@ const process_script_dir = (script_dir) => {
 }
 
 module.exports = function(github, context, core) {
-	let _output = []
 	const scripts_dir = path.resolve("scripts");
 
 	for (let dir of fs.readdirSync(scripts_dir)) {
-		const [scripts_name, output_dirs] = process_script_dir(path.join(scripts_dir, dir));
-		if (typeof scripts_name !== "string") {
-			continue;
-		}
-	
-		_output = _output.concat(output_dirs);
+		process_script_dir(path.join(scripts_dir, dir));
 	}
-
-	return JSON.stringify(_output);
 };
