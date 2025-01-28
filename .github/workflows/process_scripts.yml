@@ -27,7 +27,7 @@ jobs:
 
       - run: npm install @actions/github
 
-      - name: Process ./scripts/*
+      - name: Process ./scripts/* directory
         env:
           USER_GIST_PAT: ${{ secrets.USER_GIST_PAT }}
         id: process_scripts
@@ -37,7 +37,7 @@ jobs:
             const path = require("path");
             return require(path.resolve(".github/workflows/script_processor.js"))(context, core)
 
-      - name: Upload ./output/* (processed ./scripts/*)
+      - name: Upload output of processed scripts
         if: steps.process_scripts.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
