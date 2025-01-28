@@ -12,7 +12,7 @@ module.exports = function(github, context, core) {
 			}
 		}
 
-		github.rest.request(`PATCH /gists/${gist_id}`, {
+		github.request(`PATCH /gists/${gist_id}`, {
 			gist_id: gist_id,
 			description: `${script_dir} (https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}) - processed`,
 			files: files,
