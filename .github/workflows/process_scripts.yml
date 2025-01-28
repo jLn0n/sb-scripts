@@ -20,7 +20,7 @@ jobs:
           unzip darklua.zip
           chmod +x darklua
 
-      - name: Process ./scripts
+      - name: Process ./scripts/*
         id: process_scripts
         uses: actions/github-script@v7
         with:
@@ -28,7 +28,7 @@ jobs:
             const path = require("path");
             return require(path.resolve(".github/workflows/script_processor.js"))(github, core, exec)
 
-      - name: Upload Processed Outputs of ./scripts
+      - name: Upload ./output/* (processed ./scripts/*)
         if: steps.process_scripts.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:

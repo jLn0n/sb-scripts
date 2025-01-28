@@ -43,7 +43,7 @@ const process_script_dir = (script_dir) => {
         continue;
       }
 
-      const output_dir = path.join("output", file_dir);
+      const output_dir = path.resolve("output", file_dir);
       const command = `./darklua process ${full_file_dir} ${output_dir} -c ${full_darklua_config_dir}`;
 
       child_proc.exec(command, (cmd_err, stdout, stderr) => {
@@ -67,11 +67,9 @@ const process_script_dir = (script_dir) => {
 
 
 module.exports = function(github, context, core) {
-  console.log(github, context, core)
-  const scripts_dir = path.resolve("scripts");
-  console.log(fs.readdirSync(path.resolve("")))
-
+  console.log(core);
   const _output = []
+  const scripts_dir = path.resolve("scripts");
 
   for (let dir of fs.readdirSync(scripts_dir)) {
     const [scripts_name, output_dirs] = process_script_dir(path.join(scripts_dir, dir));
@@ -79,8 +77,9 @@ module.exports = function(github, context, core) {
       continue;
     }
   
-    _output = _output.concat(output_dirs)
+    _output = _output.concat(output_dirs);
   }
 
-  core.setOutput('scripts_dirs', JSON.stringify(_output));
+  core.setOutput("output_files", JSON.stringify(_output));
+  return JSON.stringify(_output);
 };
