@@ -82,8 +82,8 @@ const process_script_dir = (script_dir) => {
 
 	if (typeof config_data.gist_id === "string") {
 		if (_process_count === config_data.process_files.length) {
-			console.log("Gist id found & all requested files got processed successfully! Uploading...")
-			upload_scripts(path.join(path.dirname(script_dir), scripts_name), output_dirs, config_data.gist_id)
+			//console.log("Gist id found & all requested files got processed successfully! Uploading...")
+			//upload_scripts(path.join(path.dirname(script_dir), scripts_name), output_dirs, config_data.gist_id)
 		} else {
 			console.warn("Gist id exist, but all requested files didn't got processed successfully. Skipping...")
 		}
@@ -93,6 +93,7 @@ const process_script_dir = (script_dir) => {
 
 module.exports = function(_github, context, core) {
 	github = _github;
+	console.log(github)
 	const scripts_dir = path.resolve("scripts");
 
 	for (let dir of fs.readdirSync(scripts_dir)) {
