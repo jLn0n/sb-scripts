@@ -12,13 +12,10 @@ module.exports = function(github, context, core) {
 			}
 		}
 
-		github.rest.gists.request(`PATCH /gists/${gist_id}`, {
+		github.rest.gists.update({
 			gist_id: gist_id,
 			description: `${script_dir} (https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}) - processed`,
-			files: files,
-			headers: {
-				'X-GitHub-Api-Version': '2022-11-28'
-			}
+			files: files
 		})
 	}
 
