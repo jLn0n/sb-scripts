@@ -1,0 +1,39 @@
+{
+  generator: "retain_lines",
+
+  bundle: {
+		modules_identifier: "__DARKLUA_BUNDLE_MODULES",
+		excludes: [],
+
+		require_mode: {
+			name: "path",
+			module_folder_name: "init",
+			use_luau_configuration: true,
+
+			sources: {},
+		},
+  },
+
+  rules: [
+		{
+			rule: "inject_global_value",
+			identifier: "DEBUG",
+			value: true,
+		},
+		{
+			rule: "remove_comments",
+			except: ["^--!"],
+		},
+		"remove_types",
+		"remove_spaces",
+		"remove_nil_declaration",
+		"compute_expression",
+		"remove_floor_division",
+		"remove_compound_assignment",
+		"remove_continue",
+		"remove_if_expression",
+		"remove_unused_if_branch",
+		"filter_after_early_return",
+		"remove_empty_do",
+  ],
+}

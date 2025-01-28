@@ -1,0 +1,11 @@
+{
+	"version": 1,
+	"name": "movement_system",
+	"process_files": [
+		"./server.luau",
+		"./client.luau"
+	],
+	"gist_id": "gist id here yes",
+
+	"darklua_config": "./.config/dev.darklua.json5"
+}
