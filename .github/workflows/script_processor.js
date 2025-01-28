@@ -14,7 +14,9 @@ module.exports = function(context, core) {
 		}
 		try {
 			const gist_tok = core.getInput("GH_GIST_TOK");
-			const octokit = github.getOctokit(gist_tok);
+			const octokit = github.getOctokit({
+				auth: gist_tok,
+			});
 
 			await octokit.rest.gists.update({
 				gist_id: gist_id,
@@ -24,7 +26,7 @@ module.exports = function(context, core) {
 
 			console.log(`Gist upload successful for '${script_dir}'!`)
 		} catch (err) {
-			console.log(`Failed to upload '${script_dir}' to gist. Error:\n${err}`)
+			console.log(`Failed to upload '${script_dir}' to gist. \nError message: "${err}"`)
 		}
 	}
 
