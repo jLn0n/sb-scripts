@@ -1,13 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const child_proc = require("child_process");
-const github = require("@actions/github")
 
-module.exports = function(_github, context, core) {
-	const octokit = github.getOctokit()
-	console.log("imported octokit:", octokit, github)
-	console.log("provided octokit:", _github)
-
+module.exports = function(github, context, core) {
 	const upload_scripts = (script_dir, output_dirs, gist_id) => {
 		const files = {}
 
@@ -17,7 +12,7 @@ module.exports = function(_github, context, core) {
 			}
 		}
 
-		github.request(`PATCH /gists/${gist_id}`, {
+		github.rest.gists.update({
 			gist_id: gist_id,
 			description: `${script_dir} (https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}) - processed`,
 			files: files,
