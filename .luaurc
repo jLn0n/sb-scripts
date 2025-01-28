@@ -7,6 +7,6 @@
   "typeErrors": true,
   "globals": [],
   "aliases": {
-    "movement-system": "./movement-system"
+    "movement-system": "./scripts/movement-system"
   }
 }

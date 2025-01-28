@@ -43,7 +43,7 @@ const process_script_dir = (script_dir) => {
         continue;
       }
 
-      const output_dir = path.resolve("output", file_dir);
+      const output_dir = path.resolve("output", scripts_name, file_dir);
       const command = `./darklua process ${full_file_dir} ${output_dir} -c ${full_darklua_config_dir}`;
 
       child_proc.exec(command, (cmd_err, stdout, stderr) => {
