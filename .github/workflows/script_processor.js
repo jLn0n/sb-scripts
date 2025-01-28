@@ -43,10 +43,11 @@ const process_script_dir = (script_dir) => {
         continue;
       }
 
-      const output_dir = path.resolve("output", scripts_name, file_dir);
+      const output_dir = path.resolve("_output", scripts_name, file_dir);
       const command = `./darklua process ${full_file_dir} ${output_dir} -c ${full_darklua_config_dir}`;
 
       child_proc.exec(command, (cmd_err, stdout, stderr) => {
+        console.log("!DEBUG", cmd_err, stdout, stderr)
         if (cmd_err) {
           console.error(`Darklua errored with file '${file_dir}':`, cmd_err);
         } else {
@@ -67,7 +68,6 @@ const process_script_dir = (script_dir) => {
 
 
 module.exports = function(github, context, core) {
-  console.log(core);
   const _output = []
   const scripts_dir = path.resolve("scripts");
 
@@ -80,6 +80,5 @@ module.exports = function(github, context, core) {
     _output = _output.concat(output_dirs);
   }
 
-  core.setOutput("output_files", JSON.stringify(_output));
   return JSON.stringify(_output);
 };
