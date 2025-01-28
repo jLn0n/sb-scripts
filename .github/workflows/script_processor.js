@@ -1,15 +1,15 @@
 const fs = require("fs");
 const path = require("path");
 const child_proc = require("child_process");
-
+let github;
 
 const upload_scripts = (scripts_dir, output_dirs, gist_id) => {
 	const file_names = []
 	const file_contents = []
 
 	for (let output_dir of output_dirs) {
-		file_names.push(path.basename(output_dir))
-		file_contents.push(fs.readFileSync(output_dir).toString("utf-8"))
+		file_names.push(path.basename(output_dir));
+		file_contents.push(fs.readFileSync(output_dir).toString("utf-8"));
 	}
 
 	github.rest.gists.upload(
@@ -91,7 +91,8 @@ const process_script_dir = (script_dir) => {
 	return scripts_name, output_dirs;
 }
 
-module.exports = function(github, context, core) {
+module.exports = function(_github, context, core) {
+	github = _github;
 	const scripts_dir = path.resolve("scripts");
 
 	for (let dir of fs.readdirSync(scripts_dir)) {
