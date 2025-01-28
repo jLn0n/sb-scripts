@@ -20,7 +20,7 @@ const upload_scripts = async (script_dirname, output_dirs, gist_id) => {
 	try {
 		await octokit.rest.gists.update({
 			gist_id: gist_id,
-			description: `https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}/${script_dirname} - processed`,
+			description: `https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}/scripts/${script_dirname} - processed`,
 			files: files
 		});
 
