@@ -11,8 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Fetch Darklua
         run: |
@@ -26,7 +25,7 @@ jobs:
         with:
           script: |
             const path = require("path");
-            return require(path.resolve(".github/workflows/script_processor.js"))(github, core, exec)
+            return require(path.resolve(".github/workflows/script_processor.js"))(github, context, core)
 
       - name: Upload ./output/* (processed ./scripts/*)
         if: steps.process_scripts.outcome == 'success'
@@ -35,4 +34,3 @@ jobs:
           name: scripts_output
           path: ./_output/
           retention-days: 7
-
