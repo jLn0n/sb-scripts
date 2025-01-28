@@ -9,7 +9,7 @@ const auth_tok = core.getInput("USER_GIST_PAT", {required: true});
 const octokit = github.getOctokit(auth_tok);
 const context = github.context;
 
-const upload_scripts = async (script_dir, output_dirs, gist_id) => {
+const upload_scripts = async (script_dirname, output_dirs, gist_id) => {
 	const files = {}
 
 	for (let output_dir of output_dirs) {
@@ -20,13 +20,13 @@ const upload_scripts = async (script_dir, output_dirs, gist_id) => {
 	try {
 		await octokit.rest.gists.update({
 			gist_id: gist_id,
-			description: `${script_dir} (https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}) - processed`,
+			description: `https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}/${script_dirname} - processed`,
 			files: files
 		});
 
-		console.log(`Gist upload successful for '${script_dir}'!`)
+		console.log(`Gist upload successful for '${script_dirname}'!`)
 	} catch (err) {
-		console.log(`Failed to upload '${script_dir}' to gist. \nError message: "${err}"`)
+		console.log(`Failed to upload '${script_dirname}' to gist. \nError message: "${err}"`)
 	}
 }
 
@@ -93,7 +93,7 @@ const process_script_dir = (script_dir) => {
 	if (typeof config_data.gist_id === "string") {
 		if (_process_count === config_data.process_files.length) {
 			console.log("Gist id found & all requested files got processed successfully! Uploading...")
-			upload_scripts(path.join(path.basename(script_dir), scripts_name), output_dirs, config_data.gist_id)
+			upload_scripts(path.basename(script_dir), output_dirs, config_data.gist_id)
 		} else {
 			console.warn("Gist id exist, but all requested files didn't got processed successfully. Skipping...")
 		}
