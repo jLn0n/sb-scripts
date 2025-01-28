@@ -68,8 +68,8 @@ const process_script_dir = (script_dir) => {
 
 module.exports = function(github, context, core) {
   console.log(github, context, core)
-  const branch_dir = context.matrix.directory;
-  const scripts_dir = path.join(branch_dir, "scripts");
+  const scripts_dir = path.resolve("scripts");
+  console.log(fs.readdirSync(path.resolve("")))
 
   const _output = []
 

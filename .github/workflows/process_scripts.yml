@@ -26,7 +26,7 @@ jobs:
         with:
           script: |
             const path = require("path");
-            return require(path.resolve("script_processor.js"))(github, core, exec)
+            return require(path.resolve(".github/workflows/script_processor.js"))(github, core, exec)
 
       - name: Upload Processed Outputs of ./scripts
         if: steps.process_scripts.outcome == 'success'
