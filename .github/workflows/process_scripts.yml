@@ -33,7 +33,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: scripts_output
-          path: |
-            ${{ fromJson(steps.process_scripts.outputs.*) }}
+          path: ./_outputs/
           retention-days: 7
 
