@@ -1,9 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const child_proc = require("child_process");
+const github = require("@actions/github")
 
-module.exports = function(github, context, core) {
-	const upload_scripts = (script_dir, output_dirs, gist_id) => {
+module.exports = function(context, core) {
+	const upload_scripts = async (script_dir, output_dirs, gist_id) => {
 		const files = {}
 
 		for (let output_dir of output_dirs) {
@@ -11,15 +12,20 @@ module.exports = function(github, context, core) {
 				content: fs.readFileSync(output_dir).toString("utf-8"),
 			}
 		}
+		try {
+			const gist_tok = core.getInput("GH_GIST_TOK");
+			const octokit = github.getOctokit(gist_tok);
 
-		github.rest.gists.update({
-			gist_id: gist_id,
-			description: `${script_dir} (https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}) - processed`,
-			files: files,
-			headers: {
-				'X-GitHub-Api-Version': '2022-11-28'
-			}
-		})
+			await octokit.rest.gists.update({
+				gist_id: gist_id,
+				description: `${script_dir} (https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${context.sha}) - processed`,
+				files: files
+			});
+
+			console.log(`Gist upload successful for '${script_dir}'!`)
+		} catch (err) {
+			console.log(`Failed to upload '${script_dir}' to gist. Error:\n${err}`)
+		}
 	}
 
 	const process_script_dir = (script_dir) => {

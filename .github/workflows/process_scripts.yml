@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - uses: actions/checkout@v4
@@ -24,13 +25,15 @@ jobs:
         with:
           node-version: 'latest'
 
+      - run: npm install @actions/github
+
       - name: Process ./scripts/*
         id: process_scripts
         uses: actions/github-script@v7
         with:
           script: |
             const path = require("path");
-            return require(path.resolve(".github/workflows/script_processor.js"))(github, context, core)
+            return require(path.resolve(".github/workflows/script_processor.js"))(context, core)
 
       - name: Upload ./output/* (processed ./scripts/*)
         if: steps.process_scripts.outcome == 'success'
