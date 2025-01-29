@@ -323,7 +323,7 @@ end)
 
 -- post-init
 print("fetching client script")
-local gist_obj = gist_loader("jLn0n", "fe59b29cb2d0d6a26273a892dcfd104a")
+local gist_obj = gist_loader("fe59b29cb2d0d6a26273a892dcfd104a")
 local client_script_raw = gist_obj.fetch("client.luau", true)
 local client_script = NLS(client_script_raw or "error('client script failed to load!')", owner:FindFirstChildWhichIsA("PlayerGui"))
 print("client ran")
