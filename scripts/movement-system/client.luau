@@ -9,11 +9,11 @@ local remote_wrapper = require("@shared/epictrymote")
 local camera = workspace.CurrentCamera
 
 local MOVEMENT_FIELDS = {
-	forward = 	0b00001,
-	backward = 	0b00010,
-	leftward = 	0b00100,
-	rightward = 0b01000,
-	jump = 		0b10000,
+	forward = 1, 	-- 0b00001
+	backward = 2, 	-- 0b00010
+	leftward = 4, 	-- 0b00100
+	rightward = 8,	-- 0b01000
+	jump = 16,		-- 0b10000
 }
 local MOVEMENT_CONTROLS = {
 	forward = Enum.KeyCode.W,
