@@ -8,6 +8,7 @@ character_container.Name = "character store thing"
 character_container.Parent = script
 
 local gist_loader = require("@shared/gist-loader")
+local remote_wrapper = require("@shared/epictrymote")
 
 local types = require("./types")
 local Collision = require("./simulation/collision")
@@ -20,9 +21,6 @@ local MOVEMENT_ORDER = {
 	"rightward",
 	"jump"
 }
-
-local remotes: {[string]: Instance & (RemoteEvent | UnreliableRemoteEvent)} = {}
-local remote_registry: {[string]: types.ShittyRemoteConfig} = {}
 
 local halonoid_data: types.HalonoidData = {
 	modifiers = {
@@ -279,32 +277,17 @@ if _character then
 	_character.Parent = character_container
 end
 
-remote_registry.send_movement_state = {
-	mode = "unreliable",
-	callback = function(sender: Player, state_buff: buffer)
-		if sender.UserId ~= owner.UserId then
-			return
-		end
-	
-		decode_character_state(state_buff)
-	end
-}
+print("registering remotes")
 
-print("creating remotes")
-for remote_name, remote_config in remote_registry do
-	local remote_obj: Instance & (RemoteEvent | UnreliableRemoteEvent)
-	if remote_config.mode == "reliable" then
-		remote_obj = Instance.new("RemoteEvent")
-	elseif remote_config.mode == "unreliable" then
-		remote_obj = Instance.new("UnreliableRemoteEvent")
+remote_wrapper.onUnreliableServerEvent("send_movement_state", function(sender: Player, state_buff: buffer)
+	if owner.UserId ~= sender.UserId then
+		return
 	end
 
-	remote_obj.Name = remote_name;
-	(remote_obj.OnServerEvent::RBXScriptSignal):Connect(remote_config.callback);
-	remote_obj.Parent = remotes_container;
-	remotes[remote_name] = remote_obj
-end
-print("remotes loaded")
+	decode_character_state(state_buff)
+end)
+
+print("remotes registered")
 
 -- main
 -- TODO: add state system for potential character animations

@@ -4,16 +4,16 @@ repeat task.wait() until script:GetAttribute("server_ready")
 local input_service = game:GetService("UserInputService")
 local run_service = game:GetService("RunService")
 
-local remotes_container = script:FindFirstChild("remotes")
+local remote_wrapper = require("@shared/epictrymote")
 
 local camera = workspace.CurrentCamera
 
 local MOVEMENT_FIELDS = {
-	forward = 1, 	-- 0b00001
-	backward = 2, 	-- 0b00010
-	leftward = 4, 	-- 0b00100
-	rightward = 8,	-- 0b01000
-	jump = 16,		-- 0b10000
+	forward = 	0b00001,
+	backward = 	0b00010,
+	leftward = 	0b00100,
+	rightward = 0b01000,
+	jump = 		0b10000,
 }
 local MOVEMENT_CONTROLS = {
 	forward = Enum.KeyCode.W,
@@ -22,8 +22,6 @@ local MOVEMENT_CONTROLS = {
 	rightward = Enum.KeyCode.D,
 	jump = Enum.KeyCode.Space
 }
-
-local remotes = {}
 
 local character_data = {
 	movement_states = {
@@ -38,10 +36,10 @@ local character_data = {
 local function encode_movement(movement_states)
 	local result
 	result = bit32.band((movement_states.forward), MOVEMENT_FIELDS.forward)
-	result = result + bit32.band(bit32.lshift((movement_states.backward), 1), MOVEMENT_FIELDS.backward)
-	result = result + bit32.band(bit32.lshift((movement_states.leftward), 2), MOVEMENT_FIELDS.leftward)
-	result = result + bit32.band(bit32.lshift((movement_states.rightward), 3), MOVEMENT_FIELDS.rightward)
-	result = result + bit32.band(bit32.lshift((movement_states.jump), 4), MOVEMENT_FIELDS.jump)
+	result += bit32.band(bit32.lshift((movement_states.backward), 1), MOVEMENT_FIELDS.backward)
+	result += bit32.band(bit32.lshift((movement_states.leftward), 2), MOVEMENT_FIELDS.leftward)
+	result += bit32.band(bit32.lshift((movement_states.rightward), 3), MOVEMENT_FIELDS.rightward)
+	result += bit32.band(bit32.lshift((movement_states.jump), 4), MOVEMENT_FIELDS.jump)
 
 	return result
 end
@@ -61,19 +59,10 @@ local function send_current_state()
 	buffer.writeu16(state_buff, 0, mapped_yaw)
 	buffer.writeu16(state_buff, 2, movement_state)
 
-	remotes.send_movement_state:FireServer(state_buff)
+	remote_wrapper.fireServer("send_movement_state", state_buff)
 end
-
--- init
-print("fetching remotes")
-for _, remote_obj in ipairs(remotes_container:GetChildren()) do
-	remotes[remote_obj.Name] = remote_obj
-end
-print("remotes fetched")
 
 -- main
-camera.CameraType = Enum.CameraType.Custom
-
 run_service.PreSimulation:Connect(function()
 	if input_service:GetFocusedTextBox() then return end
 
