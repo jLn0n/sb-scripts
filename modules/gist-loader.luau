@@ -8,7 +8,7 @@
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
-local GITHUB_API_URL = "https://gist-shenanigans.jln0n-xd.workers.dev/"
+local GITHUB_API_URL = "https://gist-shenanigans.jln0n-xd.workers.dev"
 local GIST_FETCH_RETRIES = 10
 
 type GistObject = {
