@@ -13,6 +13,7 @@ type SBCharacter = {
 type SBCharacterSignal = RBXScriptSignal<SBCharacter>
 
 declare owner: {
+    PlayerGui: PlayerGui,
     Character: SBCharacter,
     CharacterAdded: SBCharacterSignal,
     CharacterRemoving: SBCharacterSignal,
