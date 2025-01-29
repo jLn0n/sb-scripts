@@ -12,19 +12,24 @@ local IS_SERVER = RunService:IsServer()
 local IS_CLIENT = RunService:IsClient()
 
 local REMOTE_CONTAINER: Folder
-local REMOTE_CONTAINER_NAME = `epictrymotes - {owner.UserId}\0`
+local REMOTE_CONTAINER_NAME = `epictrymotes - {owner.Name}`
+local REMOTE_CONTAINER_PARENT = owner.PlayerGui
 
 if IS_SERVER then
-	local _thing = owner:FindFirstChild(REMOTE_CONTAINER_NAME)
+	local _thing = REMOTE_CONTAINER_PARENT:FindFirstChild(REMOTE_CONTAINER_NAME)
 	if _thing then
 		_thing:Destroy()
 	end
 
 	REMOTE_CONTAINER = Instance.new("Folder")
 	REMOTE_CONTAINER.Name = REMOTE_CONTAINER_NAME
-	REMOTE_CONTAINER.Parent = owner
+	REMOTE_CONTAINER.Parent = REMOTE_CONTAINER_PARENT
 else
-	REMOTE_CONTAINER = (owner:WaitForChild(REMOTE_CONTAINER_NAME, 5)::Folder)
+	REMOTE_CONTAINER = (REMOTE_CONTAINER_PARENT:WaitForChild(REMOTE_CONTAINER_NAME, 5)::Folder)
+
+	if not REMOTE_CONTAINER then
+		return error("could not fetch remote container")
+	end
 end
 
 type RemoteClasses = "RemoteEvent" | "UnreliableRemoteEvent" | "RemoteFunction" 
