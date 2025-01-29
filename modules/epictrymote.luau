@@ -24,7 +24,7 @@ if IS_SERVER then
 	REMOTE_CONTAINER.Name = REMOTE_CONTAINER_NAME
 	REMOTE_CONTAINER.Parent = owner
 else
-	REMOTE_CONTAINER = (owner:FindFirstChild(REMOTE_CONTAINER_NAME)::Folder)
+	REMOTE_CONTAINER = (owner:WaitForChild(REMOTE_CONTAINER_NAME, 5)::Folder)
 end
 
 type RemoteClasses = "RemoteEvent" | "UnreliableRemoteEvent" | "RemoteFunction" 
