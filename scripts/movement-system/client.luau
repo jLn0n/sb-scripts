@@ -23,7 +23,7 @@ local MOVEMENT_CONTROLS = {
 	jump = Enum.KeyCode.Space
 }
 
-local send_movement_states = communiception.new("send_movement_states", "unreliable")
+local send_movement_states = communiception.new("send_movement_state", "unreliable")
 
 local character_data = {
 	movement_states = {
