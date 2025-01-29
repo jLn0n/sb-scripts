@@ -9,6 +9,7 @@ local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
 local GITHUB_API_URL = "https://api.github.com"
+local GIST_FETCH_RETRIES = 10
 
 type GistObject = {
 	fetch: (path: string, no_cache: boolean) -> (string?),
@@ -19,13 +20,11 @@ local function gist_url_constructor(gist_id: string, gist_owner: string, commit_
 	return "https://gist.githubusercontent.com/" .. gist_owner .. "/" .. gist_id .. "/raw/" .. commit_hash .. "/"
 end
 
-local function fetch_url(url: string, no_cache: boolean, silent: boolean?): string?
+local function fetch_url(url: string, no_cache: boolean): string?
 	local success, result = pcall(HttpService.GetAsync, HttpService, url, no_cache)
 
 	if not success then
-		if not silent then
-			warn(`Failed to load URL '{url}'\n{result}`)
-		end
+		warn(`Failed to load URL '{url}'\n{result}`)
 		return nil
 	end
 	return result
@@ -48,17 +47,17 @@ return function(gist_id: string): GistObject
 	local raw_gist_commits;
 
 	repeat
-		raw_gist_commits = fetch_url(`${GITHUB_API_URL}/gists/${gist_id}/commits`, true, true)
+		raw_gist_commits = fetch_url(`${GITHUB_API_URL}/gists/${gist_id}/commits`, true)
 		if raw_gist_commits then
 			break
 		end
 
 		task.wait(1)
 		_retries += 1
-	until _retries > 5
+	until _retries > GIST_FETCH_RETRIES
 
 	if not raw_gist_commits then
-		return error(`Failed to fetch gist '${gist_id}'!`, 2)
+		return error(`Failed to fetch gist '${gist_id}' atmost {GIST_FETCH_RETRIES} tries!`, 2)
 	end
 
 	local gist_commits = HttpService:JSONDecode(raw_gist_commits)

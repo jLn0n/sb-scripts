@@ -6,21 +6,25 @@
 	Based of https://github.com/nightcycle/network-util/blob/29934bc19679fe3841defbf61230a1535bb80026/src/init.luau with some changes
 --]]
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local IS_SERVER = RunService:IsServer()
 local IS_CLIENT = RunService:IsClient()
 
 local REMOTE_CONTAINER: Folder
-local REMOTE_CONTAINER_NAME = `{owner.Name} - remotes\0`
+local REMOTE_CONTAINER_NAME = `epictrymotes - {owner.UserId}\0`
 
 if IS_SERVER then
+	local _thing = owner:FindFirstChild(REMOTE_CONTAINER_NAME)
+	if _thing then
+		_thing:Destroy()
+	end
+
 	REMOTE_CONTAINER = Instance.new("Folder")
 	REMOTE_CONTAINER.Name = REMOTE_CONTAINER_NAME
-	REMOTE_CONTAINER.Parent = ReplicatedStorage
+	REMOTE_CONTAINER.Parent = owner
 else
-	REMOTE_CONTAINER = (ReplicatedStorage:FindFirstChild(REMOTE_CONTAINER_NAME)::Folder)
+	REMOTE_CONTAINER = (owner:FindFirstChild(REMOTE_CONTAINER_NAME)::Folder)
 end
 
 type RemoteClasses = "RemoteEvent" | "UnreliableRemoteEvent" | "RemoteFunction" 
