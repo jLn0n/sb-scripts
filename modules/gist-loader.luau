@@ -47,7 +47,7 @@ return function(gist_id: string): GistObject
 	local raw_gist_commits;
 
 	repeat
-		raw_gist_commits = fetch_url(`${GITHUB_API_URL}/gists/${gist_id}/commits`, true)
+		raw_gist_commits = fetch_url(`{GITHUB_API_URL}/gists/{gist_id}/commits`, true)
 		if raw_gist_commits then
 			break
 		end
@@ -57,7 +57,7 @@ return function(gist_id: string): GistObject
 	until _retries > GIST_FETCH_RETRIES
 
 	if not raw_gist_commits then
-		return error(`Failed to fetch gist '${gist_id}' atmost {GIST_FETCH_RETRIES} tries!`, 2)
+		return error(`Failed to fetch gist '{gist_id}' atmost {GIST_FETCH_RETRIES} tries!`, 2)
 	end
 
 	local gist_commits = HttpService:JSONDecode(raw_gist_commits)
