@@ -28,7 +28,7 @@ else
 	REMOTE_CONTAINER = (REMOTE_CONTAINER_PARENT:WaitForChild(REMOTE_CONTAINER_NAME, 5)::Folder)
 
 	if not REMOTE_CONTAINER then
-		return error("could not fetch remote container")
+		error("could not fetch remote container")
 	end
 end
 

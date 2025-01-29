@@ -59,7 +59,7 @@ local function send_current_state()
 	buffer.writeu16(state_buff, 0, mapped_yaw)
 	buffer.writeu16(state_buff, 2, movement_state)
 
-	remote_wrapper.fireServer("send_movement_state", state_buff)
+	remote_wrapper.fireServerUnreliable("send_movement_state", state_buff)
 end
 
 -- main
