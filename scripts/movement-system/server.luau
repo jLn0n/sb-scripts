@@ -8,7 +8,7 @@ character_container.Name = "character store thing"
 character_container.Parent = script
 
 local gist_loader = require("@shared/gist-loader")
-local remote_wrapper = require("@shared/epictrymote")
+local communiception = require("@shared/communiception/server")
 
 local types = require("./types")
 local Collision = require("./simulation/collision")
@@ -21,6 +21,8 @@ local MOVEMENT_ORDER = {
 	"rightward",
 	"jump"
 }
+
+local send_movement_state = communiception.new("send_movement_state", "unreliable")
 
 local halonoid_data: types.HalonoidData = {
 	modifiers = {
@@ -279,7 +281,7 @@ end
 
 print("registering remotes")
 
-remote_wrapper.onUnreliableServerEvent("send_movement_state", function(sender: Player, state_buff: buffer)
+send_movement_state:listen(function(sender: Player, state_buff: buffer)
 	if owner.UserId ~= sender.UserId then
 		return
 	end

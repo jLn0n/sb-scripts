@@ -4,7 +4,7 @@ repeat task.wait() until script:GetAttribute("server_ready")
 local input_service = game:GetService("UserInputService")
 local run_service = game:GetService("RunService")
 
-local remote_wrapper = require("@shared/epictrymote")
+local communiception = require("@shared/communiception/client")
 
 local camera = workspace.CurrentCamera
 
@@ -22,6 +22,8 @@ local MOVEMENT_CONTROLS = {
 	rightward = Enum.KeyCode.D,
 	jump = Enum.KeyCode.Space
 }
+
+local send_movement_states = communiception.new("send_movement_states", "unreliable")
 
 local character_data = {
 	movement_states = {
@@ -59,7 +61,7 @@ local function send_current_state()
 	buffer.writeu16(state_buff, 0, mapped_yaw)
 	buffer.writeu16(state_buff, 2, movement_state)
 
-	remote_wrapper.fireServerUnreliable("send_movement_state", state_buff)
+	send_movement_states:send(state_buff)
 end
 
 -- main
