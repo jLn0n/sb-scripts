@@ -23,7 +23,8 @@ local MOVEMENT_CONTROLS = {
 	jump = Enum.KeyCode.Space
 }
 
-local send_movement_states = communiception.new("send_movement_state", "unreliable")
+local send_movement_states = communiception.newEvent("send_movement_state", "unreliable")
+local thingamajig = communiception.newFunction("thingamajig")
 
 local character_data = {
 	movement_states = {
@@ -77,4 +78,5 @@ run_service.PostSimulation:Connect(function()
 	send_current_state()
 end)
 
+print("thingamajig return got:", thingamajig:invoke(5, "ghi", "helow", 69420.1))
 print("client initialized")

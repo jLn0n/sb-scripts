@@ -22,7 +22,8 @@ local MOVEMENT_ORDER = {
 	"jump"
 }
 
-local send_movement_state = communiception.new("send_movement_state", "unreliable")
+local send_movement_state = communiception.newEvent("send_movement_state", "unreliable")
+local thingamajig = communiception.newFunction("thingamajig")
 
 local halonoid_data: types.HalonoidData = {
 	modifiers = {
@@ -289,6 +290,15 @@ send_movement_state:listen(function(sender: Player, state_buff: buffer)
 	decode_character_state(state_buff)
 end)
 
+thingamajig:setListener(function(sender: Player, ...: any): ...any
+	if owner.UserId ~= sender.UserId then
+		return
+	end
+
+	print("thingamajig fired,", ...)
+	return "im a test"
+end)
+
 print("remotes registered")
 
 -- main
@@ -308,6 +318,7 @@ end)
 
 -- post-init
 print("fetching client script")
+-- TODO: specify gist commit for the version where it got build
 local gist_obj = gist_loader("fe59b29cb2d0d6a26273a892dcfd104a")
 local client_script_raw = gist_obj.fetch("client.luau", true)
 local client_script = NLS(client_script_raw or "error('client script failed to load!')", owner:FindFirstChildWhichIsA("PlayerGui"))
