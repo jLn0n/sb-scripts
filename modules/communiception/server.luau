@@ -1,3 +1,4 @@
+local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
 local types = require("./types")
@@ -142,8 +143,9 @@ type CommuniceptionFunctionServer = typeof(CommuniceptionFunction) & {
 	id: string,
 
 	_internal: {
-		listeners: {types.ServerListener<...any>},
 		callback: types.ServerCallback<...any>,
+
+		listeners: {[string]: types.ServerListener<...any>},
 
 		incoming_packets: {types.IncomingFunctionPacket},
 		outcoming_packets: {types.OutcomingFunctionPacket},
@@ -158,7 +160,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 	on_incoming_remote.Parent, on_outcoming_remote.Parent = REMOTE_CONTAINER, REMOTE_CONTAINER
 
 	-- listens to data recieved from player
-	on_incoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, args: {any})
+	on_incoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: string, args: {any})
 		table.insert(self._internal.outcoming_packets, {
 			callback_id = callback_id,
 			target = sender,
@@ -167,7 +169,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 	end)
 
 	-- listens to data sent from player
-	on_outcoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, args: {any})
+	on_outcoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: string, args: {any})
 		table.insert(self._internal.incoming_packets, {
 			callback_id = callback_id,
 			sender = sender,
@@ -181,7 +183,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 			if not incoming_packet then
 				break
 			end
-			if not (incoming_packet.sender and incoming_packet.sender:IsDescendantOf(game)) then
+			if not (incoming_packet.sender) then
 				continue
 			end
 
@@ -190,7 +192,11 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 				continue
 			end
 
-			task.defer(listener, incoming_packet.sender, unpack(incoming_packet))
+			task.defer(function()
+				local result = {listener(incoming_packet.sender, unpack(incoming_packet.args))}
+
+				on_incoming_remote:FireClient(incoming_packet.sender, incoming_packet.callback_id, result)
+			end)
 		end
 
 		for _ = 1, OUTCOMING_PACKET_THRESHOLD do
@@ -210,7 +216,7 @@ end
 function CommuniceptionFunction.invokeTo(self: CommuniceptionFunctionServer, target: Player, timeout: number, ...): (boolean, ...any)
 	local thread = coroutine.running()
 	local callback_recieved = false
-	local callback_id = (#self._internal.listeners + 1)
+	local callback_id = HttpService:GenerateGUID(false)
 
 	self._internal.listeners[callback_id] = function(sender: Player, ...)
 		if target.UserId ~= sender.UserId then
@@ -219,7 +225,7 @@ function CommuniceptionFunction.invokeTo(self: CommuniceptionFunctionServer, tar
 		end
 
 		callback_recieved = true
-		table.remove(self._internal.listeners, callback_id)
+		self._internal.listeners[callback_id] = nil
 		task.spawn(thread, true, ...)
 	end
 
@@ -229,7 +235,7 @@ function CommuniceptionFunction.invokeTo(self: CommuniceptionFunctionServer, tar
 			return
 		end
 
-		table.remove(self._internal.listeners, callback_id)
+		self._internal.listeners[callback_id] = nil
 		task.spawn(thread, false)
 	end)
 

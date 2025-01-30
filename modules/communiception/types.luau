@@ -7,13 +7,13 @@ export type ServerCallback<T...> = (sender: Player, T...) -> (...any)
 export type ClientCallback<T...> = (T...) -> (...any)
 
 export type OutcomingFunctionPacket = {
-    callback_id: number,
+    callback_id: string,
     target: Player?,
     args: {any},
 }
 
 export type IncomingFunctionPacket = {
-    callback_id: number,
+    callback_id: string,
     sender: Player?,
     args: {any},
 }
