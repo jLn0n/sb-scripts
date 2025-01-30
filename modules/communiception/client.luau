@@ -33,9 +33,9 @@ function CommuniceptionEvent._init(self: CommuniceptionEventClient)
         error(`[communiception]: could not find remote[id={self.id},type=event,mode={self.mode}], perhaps it is not registered`, 3)
     end
 
-	remote_obj.OnClientEvent:Connect(function(args: {any})
+	remote_obj.OnClientEvent:Connect(function(...)
 		table.insert(self._internal.incoming_packets, {
-			args = args
+			args = {...}
 		})
 	end)
 
@@ -47,7 +47,7 @@ function CommuniceptionEvent._init(self: CommuniceptionEventClient)
 			end
 
 			for _, listener in self._internal.listeners do
-				task.defer(listener, unpack(incoming_packet.args))
+				task.spawn(listener, unpack(incoming_packet.args))
 			end
 		end
 
@@ -57,7 +57,7 @@ function CommuniceptionEvent._init(self: CommuniceptionEventClient)
 				break
 			end
 
-			remote_obj:FireServer(outcoming_packet.args)
+			remote_obj:FireServer(unpack(outcoming_packet.args))
 		end
 	end)
 end
@@ -94,7 +94,7 @@ function CommuniceptionEvent.wait(self: CommuniceptionEventClient): any
 
 	local function listener_wrapper(...)
 		disconnect_func()
-		task.defer(thread, ...)
+		task.spawn(thread, ...)
 	end
 
 	disconnect_func = CommuniceptionEvent.listen(self, listener_wrapper)
@@ -125,20 +125,20 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 	end
 
 	-- listens to data recieved from player
-	on_incoming_remote.OnClientEvent:Connect(function(callback_id: number, args: {any})
+	on_incoming_remote.OnClientEvent:Connect(function(callback_id: number, ...)
 		local listener = self._internal.listeners[callback_id]
 		if not listener then
 			return
 		end
 
-		listener(unpack(args))
+		listener(...)
 	end)
 
 	-- listens to data sent from player
-	on_outcoming_remote.OnClientEvent:Connect(function(callback_id: number, args: {any})
+	on_outcoming_remote.OnClientEvent:Connect(function(callback_id: number, ...)
 		table.insert(self._internal.incoming_packets, {
 			callback_id = callback_id,
-			args = args
+			args = {...}
 		})
 	end)
 
@@ -155,10 +155,11 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 				break
 			end
 
-			task.defer(function()
-				local result = {current_callback(unpack(incoming_packet.args))}
-
-				on_incoming_remote:FireServer(incoming_packet.callback_id, result)
+			task.spawn(function()
+				on_incoming_remote:FireServer(
+					incoming_packet.callback_id,
+					current_callback(unpack(incoming_packet.args))
+				)
 			end)
 		end
 
@@ -168,7 +169,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 				break
 			end
 
-			on_outcoming_remote:FireServer(outcoming_packet.callback_id, outcoming_packet.args)
+			on_outcoming_remote:FireServer(outcoming_packet.callback_id, unpack(outcoming_packet.args))
 		end
 	end)
 end

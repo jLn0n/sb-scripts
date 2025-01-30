@@ -32,10 +32,10 @@ function CommuniceptionEvent._init(self: CommuniceptionEventServer)
 	end
 
 	remote_obj.Parent = REMOTE_CONTAINER
-	remote_obj.OnServerEvent:Connect(function(sender: Player, args: {any})
+	remote_obj.OnServerEvent:Connect(function(sender: Player, ...)
 		table.insert(self._internal.incoming_packets, {
 			targets = {sender},
-			args = args
+			args = {...},
 		})
 	end)
 
@@ -51,7 +51,7 @@ function CommuniceptionEvent._init(self: CommuniceptionEventServer)
 
 			for _, listener in self._internal.listeners do
 				for _, target in incoming_packet.targets do
-					task.defer(listener, target, unpack(incoming_packet.args))
+					task.spawn(listener, target, unpack(incoming_packet.args))
 				end
 			end
 		end
@@ -66,7 +66,7 @@ function CommuniceptionEvent._init(self: CommuniceptionEventServer)
 			end
 
 			for _, target in outcoming_packet.targets do
-				remote_obj:FireClient(target, outcoming_packet.args)
+				remote_obj:FireClient(target, unpack(outcoming_packet.args))
 			end
 		end
 	end)
@@ -112,7 +112,7 @@ function CommuniceptionEvent.wait(self: CommuniceptionEventServer): any
 
 	local function listener_wrapper(...)
 		disconnect_func()
-		task.defer(thread, ...)
+		task.spawn(thread, ...)
 	end
 
 	disconnect_func = CommuniceptionEvent.listen(self, listener_wrapper)
@@ -142,21 +142,21 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 	on_incoming_remote.Parent, on_outcoming_remote.Parent = REMOTE_CONTAINER, REMOTE_CONTAINER
 
 	-- listens to data recieved from player
-	on_incoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, args: {any})
+	on_incoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, ...)
 		local listener = self._internal.listeners[callback_id]
 		if not listener then
 			return
 		end
 
-		listener(unpack(args))
+		listener(...)
 	end)
 
 	-- listens to data sent from player
-	on_outcoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, args: {any})
+	on_outcoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, ...)
 		table.insert(self._internal.incoming_packets, {
 			callback_id = callback_id,
 			sender = sender,
-			args = args
+			args = {...}
 		})
 	end)
 
@@ -176,10 +176,12 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 				continue
 			end
 
-			task.defer(function()
-				local result = {current_callback(incoming_packet.sender, unpack(incoming_packet.args))}
-
-				on_incoming_remote:FireClient(incoming_packet.sender, incoming_packet.callback_id, result)
+			task.spawn(function()
+				on_incoming_remote:FireClient(
+					incoming_packet.sender,
+					incoming_packet.callback_id,
+					current_callback(incoming_packet.sender, unpack(incoming_packet.args))
+				)
 			end)
 		end
 
@@ -192,7 +194,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 				continue
 			end
 
-			on_outcoming_remote:FireClient(outcoming_packet.target, outcoming_packet.callback_id, outcoming_packet.args)
+			on_outcoming_remote:FireClient(outcoming_packet.target, outcoming_packet.callback_id, unpack(outcoming_packet.args))
 		end
 	end)
 end
