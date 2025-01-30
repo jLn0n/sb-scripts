@@ -1,17 +1,11 @@
-local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
 local types = require("./types")
+local common = require("./common")
 
-local INCOMING_PACKET_THRESHOLD = 30
-local OUTCOMING_PACKET_THRESHOLD = 15
+local CONFIGURATION = common.CONFIGURATION
 
-local REMOTE_CONTAINER_NAME = `communiception_{owner.UserId}`
-local REMOTE_CONTAINER: Folder = (owner.PlayerGui:WaitForChild(REMOTE_CONTAINER_NAME, 10) :: any)
-
-if not REMOTE_CONTAINER then
-    error("[communiception]: could not fetch remote container")
-end
+local REMOTE_CONTAINER = common.initializeContainer()
 
 local registered_ids: {[string]: boolean?} = {}
 
@@ -22,12 +16,9 @@ type CommuniceptionEventClient = typeof(CommuniceptionEvent) & {
 	id: string,
 	mode: types.EventCommunicationMode,
 
-	_internal: {
+	_internal: types.CommonEventInternal & {
 		listeners: {types.ClientListener<...any>},
-
-		incoming_packets: {types.EventPacket},
-		outcoming_packets: {types.EventPacket},
-	}
+	},
 }
 
 function CommuniceptionEvent._init(self: CommuniceptionEventClient)
@@ -49,7 +40,7 @@ function CommuniceptionEvent._init(self: CommuniceptionEventClient)
 	end)
 
 	RunService.PostSimulation:Connect(function()
-		for _ = 1, INCOMING_PACKET_THRESHOLD do
+		for _ = 1, CONFIGURATION.INCOMING_PACKET_THRESHOLD do
 			local incoming_packet = table.remove(self._internal.incoming_packets)
 			if not incoming_packet then
 				break
@@ -60,7 +51,7 @@ function CommuniceptionEvent._init(self: CommuniceptionEventClient)
 			end
 		end
 
-		for _ = 1, OUTCOMING_PACKET_THRESHOLD do
+		for _ = 1, CONFIGURATION.OUTCOMING_PACKET_THRESHOLD do
 			local outcoming_packet = table.remove(self._internal.outcoming_packets)
 			if not outcoming_packet then
 				break
@@ -78,11 +69,11 @@ function CommuniceptionEvent.send(self: CommuniceptionEventClient, ...)
 end
 
 function CommuniceptionEvent.listen<T...>(self: CommuniceptionEventClient, listener: types.ClientListener<T...>): (() -> ())
-	local hash_id = (#self._internal.listeners + 1)
+	local hash_id = common.fetchEmptyIndex(self._internal.listeners)
 	self._internal.listeners[hash_id] = listener
 
 	return function()
-		table.remove(self._internal.listeners, hash_id)
+		self._internal.listeners[hash_id] = nil
 	end
 end
 
@@ -114,19 +105,15 @@ function CommuniceptionEvent.disconnectAll(self: CommuniceptionEventClient)
 	table.clear(self._internal.listeners)
 end
 
+-- @CommuniceptionFunction
 local CommuniceptionFunction = {}
 
 type CommuniceptionFunctionClient = typeof(CommuniceptionFunction) & {
 	id: string,
 
-	_internal: {
-		callback: types.ClientCallback<...any>,
-
-		listeners: {[string]: types.ClientListener<...any>},
-
-		incoming_packets: {types.IncomingFunctionPacket},
-		outcoming_packets: {types.OutcomingFunctionPacket},
-	}
+	_internal: types.CommonFunctionInternal & {
+		listeners: {types.ClientListener<...any>},
+	},
 }
 
 function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
@@ -138,7 +125,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 	end
 
 	-- listens to data recieved from player
-	on_incoming_remote.OnClientEvent:Connect(function(callback_id: string, args: {any})
+	on_incoming_remote.OnClientEvent:Connect(function(callback_id: number, args: {any})
 		local listener = self._internal.listeners[callback_id]
 		if not listener then
 			return
@@ -148,7 +135,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 	end)
 
 	-- listens to data sent from player
-	on_outcoming_remote.OnClientEvent:Connect(function(callback_id: string, args: {any})
+	on_outcoming_remote.OnClientEvent:Connect(function(callback_id: number, args: {any})
 		table.insert(self._internal.incoming_packets, {
 			callback_id = callback_id,
 			args = args
@@ -158,7 +145,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 	RunService.PostSimulation:Connect(function()
 		local current_callback = self._internal.callback
 
-		for _ = 1, INCOMING_PACKET_THRESHOLD do
+		for _ = 1, CONFIGURATION.INCOMING_PACKET_THRESHOLD do
 			if not current_callback then
 				break
 			end
@@ -175,7 +162,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 			end)
 		end
 
-		for _ = 1, OUTCOMING_PACKET_THRESHOLD do
+		for _ = 1, CONFIGURATION.OUTCOMING_PACKET_THRESHOLD do
 			local outcoming_packet = table.remove(self._internal.outcoming_packets)
 			if not outcoming_packet then
 				break
@@ -189,7 +176,7 @@ end
 function CommuniceptionFunction.invoke(self: CommuniceptionFunctionClient, timeout: number, ...): (boolean, ...any)
 	local thread = coroutine.running()
 	local callback_recieved = false
-	local callback_id = HttpService:GenerateGUID(false)
+	local callback_id = common.fetchEmptyIndex(self._internal.listeners)
 
 	self._internal.listeners[callback_id] = function(...)
 		callback_recieved = true

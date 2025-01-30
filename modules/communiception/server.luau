@@ -1,22 +1,11 @@
-local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
 local types = require("./types")
+local common = require("./common")
 
-local INCOMING_PACKET_THRESHOLD = 30
-local OUTCOMING_PACKET_THRESHOLD = 15
+local CONFIGURATION = common.CONFIGURATION
 
-local REMOTE_CONTAINER_NAME = `communiception_{owner.UserId}`
-local REMOTE_CONTAINER: Folder = (owner.PlayerGui:FindFirstChild(REMOTE_CONTAINER_NAME) :: any)
-
-if REMOTE_CONTAINER then
-	REMOTE_CONTAINER:ClearAllChildren()
-else
-	local new_container = Instance.new("Folder")
-	new_container.Name = REMOTE_CONTAINER_NAME
-	new_container.Parent = owner.PlayerGui
-	REMOTE_CONTAINER = new_container
-end
+local REMOTE_CONTAINER = common.initializeContainer()
 
 local registered_ids: {[string]: boolean?} = {}
 
@@ -27,12 +16,9 @@ type CommuniceptionEventServer = typeof(CommuniceptionEvent) & {
 	id: string,
 	mode: types.EventCommunicationMode,
 
-	_internal: {
+	_internal: types.CommonEventInternal & {
 		listeners: {types.ServerListener<...any>},
-
-		incoming_packets: {types.EventPacket},
-		outcoming_packets: {types.EventPacket},
-	}
+	},
 }
 
 function CommuniceptionEvent._init(self: CommuniceptionEventServer)
@@ -54,7 +40,7 @@ function CommuniceptionEvent._init(self: CommuniceptionEventServer)
 	end)
 
 	RunService.PostSimulation:Connect(function()
-		for _ = 1, INCOMING_PACKET_THRESHOLD do
+		for _ = 1, CONFIGURATION.INCOMING_PACKET_THRESHOLD do
 			local incoming_packet = table.remove(self._internal.incoming_packets)
 			if not incoming_packet then
 				break
@@ -70,7 +56,7 @@ function CommuniceptionEvent._init(self: CommuniceptionEventServer)
 			end
 		end
 
-		for _ = 1, OUTCOMING_PACKET_THRESHOLD do
+		for _ = 1, CONFIGURATION.OUTCOMING_PACKET_THRESHOLD do
 			local outcoming_packet = table.remove(self._internal.outcoming_packets)
 			if not outcoming_packet then
 				break
@@ -101,11 +87,11 @@ function CommuniceptionEvent.sendToMultiple(self: CommuniceptionEventServer, tar
 end
 
 function CommuniceptionEvent.listen<T...>(self: CommuniceptionEventServer, listener: types.ServerListener<T...>): (() -> ())
-	local hash_id = (#self._internal.listeners + 1)
-	self._internal.listeners[hash_id] = listener
+	local listener_id = common.fetchEmptyIndex(self._internal.listeners)
+	self._internal.listeners[listener_id] = listener
 
 	return function()
-		table.remove(self._internal.listeners, hash_id)
+		self._internal.listeners[listener_id] = nil
 	end
 end
 
@@ -137,19 +123,15 @@ function CommuniceptionEvent.disconnectAll(self: CommuniceptionEventServer)
 	table.clear(self._internal.listeners)
 end
 
+-- @CommuniceptionFunction
 local CommuniceptionFunction = {}
 
 type CommuniceptionFunctionServer = typeof(CommuniceptionFunction) & {
 	id: string,
 
-	_internal: {
-		callback: types.ServerCallback<...any>,
-
-		listeners: {[string]: types.ServerListener<...any>},
-
-		incoming_packets: {types.IncomingFunctionPacket},
-		outcoming_packets: {types.OutcomingFunctionPacket},
-	}
+	_internal: types.CommonFunctionInternal & {
+		listeners: {types.ServerListener<...any>},
+	},
 }
 
 function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
@@ -160,7 +142,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 	on_incoming_remote.Parent, on_outcoming_remote.Parent = REMOTE_CONTAINER, REMOTE_CONTAINER
 
 	-- listens to data recieved from player
-	on_incoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: string, args: {any})
+	on_incoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, args: {any})
 		local listener = self._internal.listeners[callback_id]
 		if not listener then
 			return
@@ -170,7 +152,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 	end)
 
 	-- listens to data sent from player
-	on_outcoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: string, args: {any})
+	on_outcoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, args: {any})
 		table.insert(self._internal.incoming_packets, {
 			callback_id = callback_id,
 			sender = sender,
@@ -181,7 +163,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 	RunService.PostSimulation:Connect(function()
 		local current_callback = self._internal.callback
 
-		for _ = 1, INCOMING_PACKET_THRESHOLD do
+		for _ = 1, CONFIGURATION.INCOMING_PACKET_THRESHOLD do
 			if not current_callback then
 				break
 			end
@@ -201,7 +183,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 			end)
 		end
 
-		for _ = 1, OUTCOMING_PACKET_THRESHOLD do
+		for _ = 1, CONFIGURATION.OUTCOMING_PACKET_THRESHOLD do
 			local outcoming_packet = table.remove(self._internal.outcoming_packets)
 			if not outcoming_packet then
 				break
@@ -218,7 +200,7 @@ end
 function CommuniceptionFunction.invokeTo(self: CommuniceptionFunctionServer, target: Player, timeout: number, ...): (boolean, ...any)
 	local thread = coroutine.running()
 	local callback_recieved = false
-	local callback_id = HttpService:GenerateGUID(false)
+	local callback_id = common.fetchEmptyIndex(self._internal.listeners)
 
 	self._internal.listeners[callback_id] = function(sender: Player, ...)
 		if target.UserId ~= sender.UserId then
