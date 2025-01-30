@@ -120,9 +120,9 @@ type CommuniceptionFunctionClient = typeof(CommuniceptionFunction) & {
 	id: string,
 
 	_internal: {
-		callback: types.ServerCallback<...any>,
+		callback: types.ClientCallback<...any>,
 
-		listeners: {[string]: types.ServerListener<...any>},
+		listeners: {[string]: types.ClientListener<...any>},
 
 		incoming_packets: {types.IncomingFunctionPacket},
 		outcoming_packets: {types.OutcomingFunctionPacket},
@@ -154,19 +154,20 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 	end)
 
 	RunService.PostSimulation:Connect(function()
+		local current_callback = self._internal.callback
+
 		for _ = 1, INCOMING_PACKET_THRESHOLD do
+			if not current_callback then
+				break
+			end
+
 			local incoming_packet = table.remove(self._internal.incoming_packets)
 			if not incoming_packet then
 				break
 			end
 
-			local listener = self._internal.listeners[incoming_packet.callback_id]
-			if not listener then
-				continue
-			end
-
 			task.defer(function()
-				local result = {listener(unpack(incoming_packet.args))}
+				local result = {current_callback(unpack(incoming_packet.args))}
 
 				on_incoming_remote:FireServer(incoming_packet.callback_id, result)
 			end)

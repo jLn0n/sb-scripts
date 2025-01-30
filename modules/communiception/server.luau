@@ -178,7 +178,13 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 	end)
 
 	RunService.PostSimulation:Connect(function()
+		local current_callback = self._internal.callback
+
 		for _ = 1, INCOMING_PACKET_THRESHOLD do
+			if not current_callback then
+				break
+			end
+
 			local incoming_packet = table.remove(self._internal.incoming_packets)
 			if not incoming_packet then
 				break
@@ -187,13 +193,8 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 				continue
 			end
 
-			local listener = self._internal.listeners[incoming_packet.callback_id]
-			if not listener then
-				continue
-			end
-
 			task.defer(function()
-				local result = {listener(incoming_packet.sender, unpack(incoming_packet.args))}
+				local result = {current_callback(incoming_packet.sender, unpack(incoming_packet.args))}
 
 				on_incoming_remote:FireClient(incoming_packet.sender, incoming_packet.callback_id, result)
 			end)
