@@ -58,9 +58,14 @@ function CommuniceptionEvent._init(self: CommuniceptionEventServer)
 			if not incoming_packet then
 				break
 			end
+			if not incoming_packet.targets then
+				continue
+			end
 
 			for _, listener in self._internal.listeners do
-				task.defer(listener, unpack(incoming_packet.args))
+				for _, target in incoming_packet.targets do
+					task.defer(listener, target, unpack(incoming_packet.args))
+				end
 			end
 		end
 
