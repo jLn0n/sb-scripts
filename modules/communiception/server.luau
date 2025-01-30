@@ -193,7 +193,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 			if not outcoming_packet then
 				break
 			end
-			if not (outcoming_packet.target and outcoming_packet.target:IsDescendantOf(game)) then
+			if not (outcoming_packet.target) then
 				continue
 			end
 

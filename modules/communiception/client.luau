@@ -64,9 +64,6 @@ function CommuniceptionEvent._init(self: CommuniceptionEventClient)
 			if not outcoming_packet then
 				break
 			end
-			if not outcoming_packet.targets then
-				continue
-			end
 
 			remote_obj:FireServer(outcoming_packet.args)
 		end
@@ -186,7 +183,7 @@ function CommuniceptionFunction.invoke(self: CommuniceptionFunctionClient, timeo
 	local callback_recieved = false
 	local callback_id = (#self._internal.listeners + 1)
 
-	self._internal.listeners[callback_id] = function(sender: Player, ...)
+	self._internal.listeners[callback_id] = function(...)
 		callback_recieved = true
 		table.remove(self._internal.listeners, callback_id)
 		task.spawn(thread, true, ...)
