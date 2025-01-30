@@ -161,11 +161,12 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
 
 	-- listens to data recieved from player
 	on_incoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: string, args: {any})
-		table.insert(self._internal.outcoming_packets, {
-			callback_id = callback_id,
-			target = sender,
-			args = args
-		})
+		local listener = self._internal.listeners[callback_id]
+		if not listener then
+			return
+		end
+
+		listener(unpack(args))
 	end)
 
 	-- listens to data sent from player
