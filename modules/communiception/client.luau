@@ -245,7 +245,9 @@ function module.newFunction(
 	})
 	
 	self.id = id
-	self._internal = {}
+	self._internal = {
+		listeners = {},
+	}
 
 	self._init(self :: any)
 
