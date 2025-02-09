@@ -1,10 +1,5 @@
 local SimulationTypes = require("./simulation/types")
 
-export type ShittyRemoteConfig = {
-    mode: "reliable" | "unreliable",
-    callback: (player: Player, ...any) -> (),
-}
-
 export type HalonoidControlState = {
     forward: boolean,
     backward: boolean,
