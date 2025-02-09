@@ -5,9 +5,79 @@ local common = require("./common")
 
 local CONFIGURATION = common.CONFIGURATION
 
-local REMOTE_CONTAINER = common.initializeContainer()
+local current_remotes, _registry_changed = common.initializeInternalRemotes()
 
 local registered_ids: {[string]: boolean?} = {}
+
+local incoming_packets: {types.IncomingPacket} = {}
+local outcoming_packets: {types.OutcomingPacket} = {}
+local incoming_packet_listeners: {[string]: types.ServerListener<...any>} = {}
+
+do
+	local function onReliablePeerEvent(sender: Player, id: string, ...)
+		table.insert(incoming_packets, {
+			type = ("reliable" :: any), -- I HATE YOU
+			id = id,
+			args = {...},
+			sender = sender
+		})
+	end
+
+	local function onUnreliablePeerEvent(sender: Player, id: string, ...)
+		table.insert(incoming_packets, {
+			type = ("unreliable" :: any), -- I HATE YOU
+			id = id,
+			args = {...},
+			sender = sender
+		})
+	end
+
+	local function onRemoteRegistryChanged()
+		current_remotes.reliable.OnServerEvent:Connect(onReliablePeerEvent)
+		current_remotes.unreliable.OnServerEvent:Connect(onUnreliablePeerEvent)
+	end
+
+	RunService.PostSimulation:Connect(function()
+		for _ = 1, CONFIGURATION.INCOMING_PACKET_THRESHOLD do
+			local incoming_packet = table.remove(incoming_packets)
+			if not incoming_packet then
+				-- no incoming packets to be processed, break the loop
+				break
+			end
+			if not incoming_packet.sender then
+				-- this is not possible bruv
+				continue
+			end
+
+			local listener = incoming_packet_listeners[incoming_packet.id]
+			if not listener then
+				-- the listener for id doesn't exist as of the invocation from the internal listener
+				continue
+			end
+
+			task.spawn(listener, incoming_packet.sender, unpack(incoming_packet.args))
+		end
+
+		for _ = 1, CONFIGURATION.OUTCOMING_PACKET_THRESHOLD do
+			local outcoming_packet = table.remove(outcoming_packets)
+			if not outcoming_packet then
+				-- no outcoming packets to be processed, break the loop
+				break
+			end
+			if not outcoming_packet.targets then
+				-- this is not allowed
+				continue
+			end
+
+			for _, target in outcoming_packet.targets do
+				current_remotes[outcoming_packet.type]:FireClient(target, unpack(outcoming_packet.args))
+			end
+		end
+	end)
+
+	onRemoteRegistryChanged()
+	_registry_changed.Event:Connect(onRemoteRegistryChanged)
+end
 
 -- @CommuniceptionEvent
 local CommuniceptionEvent = {}
@@ -16,78 +86,39 @@ type CommuniceptionEventServer = typeof(CommuniceptionEvent) & {
 	id: string,
 	mode: types.EventCommunicationMode,
 
-	_internal: types.CommonEventInternal & {
+	_internal: {
 		listeners: {types.ServerListener<...any>},
 	},
 }
 
 function CommuniceptionEvent._init(self: CommuniceptionEventServer)
-	local remote_obj: RemoteEvent
-	if self.mode == "reliable" then
-		remote_obj = Instance.new("RemoteEvent")
-		remote_obj.Name = `{self.id}_reliable`
-	elseif self.mode == "unreliable" then
-		remote_obj = (Instance.new("UnreliableRemoteEvent") :: any) :: RemoteEvent
-		remote_obj.Name = `{self.id}_unreliable`
+	incoming_packet_listeners[self.id] = function(sender: Player, ...)
+		for _, listener in self._internal.listeners do
+			task.spawn(listener, sender, ...)
+		end
 	end
-
-	remote_obj.Parent = REMOTE_CONTAINER
-	remote_obj.OnServerEvent:Connect(function(sender: Player, ...)
-		table.insert(self._internal.incoming_packets, {
-			targets = {sender},
-			args = {...},
-		})
-	end)
-
-	RunService.PostSimulation:Connect(function()
-		for _ = 1, CONFIGURATION.INCOMING_PACKET_THRESHOLD do
-			local incoming_packet = table.remove(self._internal.incoming_packets)
-			if not incoming_packet then
-				break
-			end
-			if not incoming_packet.targets then
-				continue
-			end
-
-			for _, listener in self._internal.listeners do
-				for _, target in incoming_packet.targets do
-					task.spawn(listener, target, unpack(incoming_packet.args))
-				end
-			end
-		end
-
-		for _ = 1, CONFIGURATION.OUTCOMING_PACKET_THRESHOLD do
-			local outcoming_packet = table.remove(self._internal.outcoming_packets)
-			if not outcoming_packet then
-				break
-			end
-			if not outcoming_packet.targets then
-				continue
-			end
-
-			for _, target in outcoming_packet.targets do
-				remote_obj:FireClient(target, unpack(outcoming_packet.args))
-			end
-		end
-	end)
 end
 
 function CommuniceptionEvent.sendTo(self: CommuniceptionEventServer, target: Player, ...)
-	table.insert(self._internal.outcoming_packets, {
+	table.insert(outcoming_packets, {
+		type = (self.mode :: any),
+		id = self.id,
+		args = {...},
 		targets = {target},
-		args = {...}
 	})
 end
 
-function CommuniceptionEvent.sendToMultiple(self: CommuniceptionEventServer, targets: { Player }, ...)
-	table.insert(self._internal.outcoming_packets, {
+function CommuniceptionEvent.sendToMultiple(self: CommuniceptionEventServer, targets: {Player}, ...)
+	table.insert(outcoming_packets, {
+		type = (self.mode :: any),
+		id = self.id,
+		args = {...},
 		targets = targets,
-		args = {...}
 	})
 end
 
 function CommuniceptionEvent.listen<T...>(self: CommuniceptionEventServer, listener: types.ServerListener<T...>): (() -> ())
-	local listener_id = common.fetchEmptyIndex(self._internal.listeners)
+	local listener_id = common.getEmptyIndex(self._internal.listeners)
 	self._internal.listeners[listener_id] = listener
 
 	return function()
@@ -129,80 +160,45 @@ local CommuniceptionFunction = {}
 type CommuniceptionFunctionServer = typeof(CommuniceptionFunction) & {
 	id: string,
 
-	_internal: types.CommonFunctionInternal & {
+	_internal: {
+		callback: types.ServerCallback<...any>,
 		listeners: {types.ServerListener<...any>},
 	},
 }
 
 function CommuniceptionFunction._init(self: CommuniceptionFunctionServer)
-	local on_incoming_remote = Instance.new("RemoteEvent")
-	local on_outcoming_remote = Instance.new("RemoteEvent")
-
-	on_incoming_remote.Name, on_outcoming_remote.Name = `{self.id}_incoming`, `{self.id}_outcoming`
-	on_incoming_remote.Parent, on_outcoming_remote.Parent = REMOTE_CONTAINER, REMOTE_CONTAINER
-
-	-- listens to data recieved from player
-	on_incoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, ...)
+	-- listens to data recieved from player (callback response)
+	incoming_packet_listeners[`incoming_{self.id}`] = function(sender: Player, callback_id: number, ...)
 		local listener = self._internal.listeners[callback_id]
 		if not listener then
 			return
 		end
 
-		listener(...)
-	end)
+		listener(sender, ...)
+	end
 
-	-- listens to data sent from player
-	on_outcoming_remote.OnServerEvent:Connect(function(sender: Player, callback_id: number, ...)
-		table.insert(self._internal.incoming_packets, {
-			callback_id = callback_id,
-			sender = sender,
-			args = {...}
-		})
-	end)
-
-	RunService.PostSimulation:Connect(function()
+	-- listens to data sent from player (callback request)
+	incoming_packet_listeners[`outcoming_{self.id}`] = function(sender: Player, callback_id: number, ...)
 		local current_callback = self._internal.callback
-
-		for _ = 1, CONFIGURATION.INCOMING_PACKET_THRESHOLD do
-			if not current_callback then
-				break
-			end
-
-			local incoming_packet = table.remove(self._internal.incoming_packets)
-			if not incoming_packet then
-				break
-			end
-			if not (incoming_packet.sender) then
-				continue
-			end
-
-			task.spawn(function()
-				on_incoming_remote:FireClient(
-					incoming_packet.sender,
-					incoming_packet.callback_id,
-					current_callback(incoming_packet.sender, unpack(incoming_packet.args))
-				)
-			end)
+		if not current_callback then
+			return
 		end
 
-		for _ = 1, CONFIGURATION.OUTCOMING_PACKET_THRESHOLD do
-			local outcoming_packet = table.remove(self._internal.outcoming_packets)
-			if not outcoming_packet then
-				break
-			end
-			if not (outcoming_packet.target) then
-				continue
-			end
-
-			on_outcoming_remote:FireClient(outcoming_packet.target, outcoming_packet.callback_id, unpack(outcoming_packet.args))
-		end
-	end)
+		task.spawn(function(...)
+			table.insert(outcoming_packets, {
+				type = ("reliable" :: any),
+				id = `incoming_{self.id}`,
+				args = {callback_id, current_callback(sender, ...)},
+				targets = {sender},
+			})
+		end, ...)
+	end
 end
 
 function CommuniceptionFunction.invokeTo(self: CommuniceptionFunctionServer, target: Player, timeout: number, ...): (boolean, ...any)
 	local thread = coroutine.running()
 	local callback_recieved = false
-	local callback_id = common.fetchEmptyIndex(self._internal.listeners)
+	local callback_id = common.getEmptyIndex(self._internal.listeners)
 
 	self._internal.listeners[callback_id] = function(sender: Player, ...)
 		if target.UserId ~= sender.UserId then
@@ -225,10 +221,11 @@ function CommuniceptionFunction.invokeTo(self: CommuniceptionFunctionServer, tar
 		task.spawn(thread, false)
 	end)
 
-	table.insert(self._internal.outcoming_packets, {
-		callback_id = callback_id,
-		target = target,
-		args = {...}
+	table.insert(outcoming_packets, {
+		type = ("reliable" :: any),
+		id = `outcoming_{self.id}`,
+		args = {callback_id, ...},
+		targets = {target},
 	})
 	return coroutine.yield()
 end
@@ -257,9 +254,6 @@ function module.newEvent(
 	self.mode = mode
 	self._internal = {
 		listeners = {},
-		
-		incoming_packets = {},
-		outcoming_packets = {},
 	}
 
 	self._init(self :: any)
@@ -280,12 +274,7 @@ function module.newFunction(
 	})
 	
 	self.id = id
-	self._internal = {
-		listeners = {},
-		
-		incoming_packets = {},
-		outcoming_packets = {},
-	}
+	self._internal = {}
 
 	self._init(self :: any)
 
