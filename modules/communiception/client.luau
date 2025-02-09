@@ -59,7 +59,7 @@ do
 				break
 			end
 
-			current_remotes[outcoming_packet.type]:FireServer(unpack(outcoming_packet.args))
+			current_remotes[outcoming_packet.type]:FireServer(outcoming_packet.id, unpack(outcoming_packet.args))
 		end
 	end)
 

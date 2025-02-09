@@ -70,7 +70,7 @@ do
 			end
 
 			for _, target in outcoming_packet.targets do
-				current_remotes[outcoming_packet.type]:FireClient(target, unpack(outcoming_packet.args))
+				current_remotes[outcoming_packet.type]:FireClient(target, outcoming_packet.id, unpack(outcoming_packet.args))
 			end
 		end
 	end)
