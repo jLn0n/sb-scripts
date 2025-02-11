@@ -4,7 +4,13 @@ local types = require("./types")
 
 local IS_SERVER = RunService:IsServer()
 
-local function _DEFAULT_REMOTE_HANDLER(remote_registry: types.RemoteRegistry)
+local __internal_default_remote_from_handler_initialized = false
+local function _DEFAULT_REMOTE_HANDLER(remote_registry: types.RemoteRegistry): (boolean)
+	if __internal_default_remote_from_handler_initialized then
+		return false
+	end
+	__internal_default_remote_from_handler_initialized = true
+
 	local REMOTE_CONTAINER_NAME = `communiception_{game.PlaceId}`
 
 	local _container_parent: Instance
@@ -61,24 +67,21 @@ local CommuniceptionCommon = {
 }
 
 function CommuniceptionCommon.initializeInternalRemotes(
-	remote_handler: types.InternalRemoteHandler?
+	remote_handler: types.InternalRemoteHandler
 ): (types.RemoteRegistry, BindableEvent)
 	local registry_changed_event = Instance.new("BindableEvent")
 	local remote_registry: types.RemoteRegistry = ({} :: any)
 
-	if not remote_handler then
-		_DEFAULT_REMOTE_HANDLER(remote_registry)
-	else
-		task.spawn(function()
-			while true do RunService.PostSimulation:Wait()
-				local new_registry = remote_handler(remote_registry)
+	task.spawn(function()
+		while true do RunService.PostSimulation:Wait()
+			local new_registry = remote_handler(remote_registry)
 
-				if new_registry then
-					registry_changed_event:Fire()
-				end
+			if new_registry then
+				registry_changed_event:Fire()
 			end
-		end)
-	end
+		end
+	end)
+	registry_changed_event.Event:Wait()
 	return remote_registry, registry_changed_event
 end
 
