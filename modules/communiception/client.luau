@@ -3,9 +3,7 @@ local RunService = game:GetService("RunService")
 local types = require("./types")
 local common = require("./common")
 
-local CONFIGURATION = common.CONFIGURATION
-
-local current_remotes, _registry_changed = common.initializeInternalRemotes()
+local _initialized = false
 
 local registered_ids: {[string]: boolean?} = {}
 
@@ -13,66 +11,12 @@ local incoming_packets: {types.IncomingPacket} = {}
 local outcoming_packets: {types.OutcomingPacket} = {}
 local incoming_packet_listeners: {[string]: types.ClientListener<...any>} = {}
 
-do
-	local function onReliablePeerEvent(id: string, ...)
-		table.insert(incoming_packets, {
-			type = ("reliable" :: any), -- I HATE YOU
-			id = id,
-			args = {...},
-		})
-	end
-
-	local function onUnreliablePeerEvent(id: string, ...)
-		table.insert(incoming_packets, {
-			type = ("unreliable" :: any), -- I HATE YOU
-			id = id,
-			args = {...},
-		})
-	end
-
-	local function onRemoteRegistryChanged()
-		current_remotes.reliable.OnClientEvent:Connect(onReliablePeerEvent)
-		current_remotes.unreliable.OnClientEvent:Connect(onUnreliablePeerEvent)
-	end
-
-	RunService.PostSimulation:Connect(function()
-		for _ = 1, CONFIGURATION.INCOMING_PACKET_THRESHOLD do
-			local incoming_packet = table.remove(incoming_packets)
-			if not incoming_packet then
-				-- no incoming packets to be processed, break the loop
-				break
-			end
-
-			local listener = incoming_packet_listeners[incoming_packet.id]
-			if not listener then
-				-- the listener for id doesn't exist as of the invocation from the internal listener
-				continue
-			end
-
-			task.spawn(listener, unpack(incoming_packet.args))
-		end
-
-		for _ = 1, CONFIGURATION.OUTCOMING_PACKET_THRESHOLD do
-			local outcoming_packet = table.remove(outcoming_packets)
-			if not outcoming_packet then
-				-- no outcoming packets to be processed, break the loop
-				break
-			end
-
-			current_remotes[outcoming_packet.type]:FireServer(outcoming_packet.id, unpack(outcoming_packet.args))
-		end
-	end)
-
-	onRemoteRegistryChanged()
-    _registry_changed.Event:Connect(onRemoteRegistryChanged)
-end
-
 -- @CommuniceptionEvent
 local CommuniceptionEvent = {}
 
 type CommuniceptionEventClient = typeof(CommuniceptionEvent) & {
 	id: string,
-	mode: types.EventCommunicationMode,
+	mode: types.CommunicationType,
 
 	_internal: {
 		listeners: {types.ClientListener<...any>},
@@ -146,7 +90,7 @@ type CommuniceptionFunctionClient = typeof(CommuniceptionFunction) & {
 
 function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 	-- listens to data recieved from server (callback response)
-	incoming_packet_listeners[`incoming_{self.id}`] = function(callback_id: number, ...)
+	incoming_packet_listeners[`i_{self.id}`] = function(callback_id: number, ...)
 		local listener = self._internal.listeners[callback_id]
 		if not listener then
 			return
@@ -156,7 +100,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 	end
 
 	-- listens to data sent from server (callback request)
-	incoming_packet_listeners[`outcoming_{self.id}`] = function(callback_id: number, ...)
+	incoming_packet_listeners[`o_{self.id}`] = function(callback_id: number, ...)
 		local current_callback = self._internal.callback
 		if not current_callback then
 			return
@@ -165,7 +109,7 @@ function CommuniceptionFunction._init(self: CommuniceptionFunctionClient)
 		task.spawn(function(...)
 			table.insert(outcoming_packets, {
 				type = ("reliable" :: any),
-				id = `incoming_{self.id}`,
+				id = `i_{self.id}`,
 				args = {callback_id, current_callback(...)},
 			})
 		end, ...)
@@ -195,7 +139,7 @@ function CommuniceptionFunction.invoke(self: CommuniceptionFunctionClient, timeo
 
 	table.insert(outcoming_packets, {
 		type = ("reliable" :: any),
-		id = `outcoming_{self.id}`,
+		id = `o_{self.id}`,
 		args = {callback_id, ...},
 	})
 	return coroutine.yield()
@@ -208,9 +152,71 @@ end
 -- main
 local module = {}
 
+function module.initialize(config: types.CommuniceptionConfiguration?): ()
+	if _initialized then
+		return error("[communiception]: already initialized.")
+	end
+	_initialized = true
+
+	local current_config = config or common.DEFAULT_CONFIGURATION
+	local current_remotes, _registry_changed = common.initializeInternalRemotes(current_config.INTERNAL_REMOTE_HANDLER)
+
+	local function onReliablePeerEvent(id: string, ...)
+		table.insert(incoming_packets, {
+			type = ("reliable" :: any),
+			id = id,
+			args = {...},
+		})
+	end
+
+	local function onUnreliablePeerEvent(id: string, ...)
+		table.insert(incoming_packets, {
+			type = ("unreliable" :: any),
+			id = id,
+			args = {...},
+		})
+	end
+
+	RunService.PostSimulation:Connect(function()
+		for _ = 1, current_config.INCOMING_PACKET_THRESHOLD do
+			local incoming_packet = table.remove(incoming_packets)
+			if not incoming_packet then
+				-- no incoming packets to be processed, break the loop
+				break
+			end
+
+			local listener = incoming_packet_listeners[incoming_packet.id]
+			if not listener then
+				-- the listener for id doesn't exist as of the invocation from the internal listener
+				continue
+			end
+
+			task.spawn(listener, unpack(incoming_packet.args))
+		end
+
+		for _ = 1, current_config.OUTCOMING_PACKET_THRESHOLD do
+			local outcoming_packet = table.remove(outcoming_packets)
+			if not outcoming_packet then
+				-- no outcoming packets to be processed, break the loop
+				break
+			end
+
+			current_remotes[outcoming_packet.type]:FireServer(outcoming_packet.id, unpack(outcoming_packet.args))
+		end
+	end)
+
+	local function onRemoteRegistryChanged()
+		current_remotes.reliable.OnClientEvent:Connect(onReliablePeerEvent)
+		current_remotes.unreliable.OnClientEvent:Connect(onUnreliablePeerEvent)
+	end
+
+	onRemoteRegistryChanged()
+	_registry_changed.Event:Connect(onRemoteRegistryChanged)
+end
+
 function module.newEvent(
 	id: string,
-	mode: types.EventCommunicationMode
+	mode: types.CommunicationType
 ): CommuniceptionEventClient
 	if registered_ids[id] then
 		return error(`[communiception]: remote[id={id}] is already registered`)
@@ -220,7 +226,7 @@ function module.newEvent(
 	local self = setmetatable({}, {
 		__index = CommuniceptionEvent
 	})
-	
+
 	self.id = id
 	self.mode = mode
 	self._internal = {
@@ -243,7 +249,7 @@ function module.newFunction(
 	local self = setmetatable({}, {
 		__index = CommuniceptionFunction
 	})
-	
+
 	self.id = id
 	self._internal = {
 		listeners = {},
