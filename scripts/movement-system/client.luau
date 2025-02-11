@@ -66,6 +66,10 @@ local function send_current_state()
 end
 
 -- main
+print("initializing communiception")
+communiception.initialize()
+print("communiception initialized")
+
 run_service.PreSimulation:Connect(function()
 	if input_service:GetFocusedTextBox() then return end
 
@@ -78,5 +82,5 @@ run_service.PostSimulation:Connect(function()
 	send_current_state()
 end)
 
-print("thingamajig return got:", thingamajig:invoke(5, "ghi", "helow", 69420.1))
+print("[communiception test]: thingamajig return got:", thingamajig:invoke(5, "ghi", "helow", 69420.1))
 print("client initialized")

@@ -280,7 +280,8 @@ if _character then
 	_character.Parent = character_container
 end
 
-print("registering remotes")
+print("initializing communiception & registering remotes")
+communiception.initialize()
 
 send_movement_state:listen(function(sender: Player, state_buff: buffer)
 	if owner.UserId ~= sender.UserId then
@@ -299,7 +300,7 @@ thingamajig:setListener(function(sender: Player, ...: any): ...any
 	return "im a test"
 end)
 
-print("remotes registered")
+print("remotes shenanigans done")
 
 -- main
 -- TODO: add state system for potential character animations
