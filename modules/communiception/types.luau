@@ -1,10 +1,9 @@
 export type CommunicationType = "reliable" | "unreliable"
 
-export type ServerListener<T...> = (sender: Player, T...) -> ()
-export type ClientListener<T...> = (T...) -> ()
+export type InternalListener = (sender: Player?, ...any) -> ()
 
-export type ServerCallback<T...> = (sender: Player, T...) -> (...any)
-export type ClientCallback<T...> = (T...) -> (...any)
+export type CommunicationListener<T> = (args: {T}, player: Player?) -> (...any)
+export type CommunicationCallback<T> = (args: {T}, player: Player?) -> (...any)
 
 type CommonPacket = {
 	type: CommunicationType,
