@@ -8,7 +8,7 @@ character_container.Name = "character store thing"
 character_container.Parent = script
 
 local gist_loader = require("@shared/gist-loader")
-local communiception = require("@shared/communiception/server")
+local communiception = require("@shared/communiception")
 
 local types = require("./types")
 local Collision = require("./simulation/collision")
@@ -283,20 +283,20 @@ end
 print("initializing communiception & registering remotes")
 communiception.initialize()
 
-send_movement_state:listen(function(sender: Player, state_buff: buffer)
-	if owner.UserId ~= sender.UserId then
+send_movement_state:listen(function(args: {any}, sender: Player?)
+	if sender and owner.UserId ~= sender.UserId then
 		return
 	end
 
-	decode_character_state(state_buff)
+	decode_character_state(args[1])
 end)
 
-thingamajig:setListener(function(sender: Player, ...: any): ...any
-	if owner.UserId ~= sender.UserId then
+thingamajig:setListener(function(args: {any}, sender: Player?): ...any
+	if sender and owner.UserId ~= sender.UserId then
 		return
 	end
 
-	print("thingamajig fired,", ...)
+	print("thingamajig fired,", unpack(args))
 	return "im a test"
 end)
 

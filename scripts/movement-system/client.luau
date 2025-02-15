@@ -4,7 +4,7 @@ repeat task.wait() until script:GetAttribute("server_ready")
 local input_service = game:GetService("UserInputService")
 local run_service = game:GetService("RunService")
 
-local communiception = require("@shared/communiception/client")
+local communiception = require("@shared/communiception")
 
 local camera = workspace.CurrentCamera
 
