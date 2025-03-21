@@ -228,10 +228,17 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
 	local current_config = config or common.DEFAULT_CONFIGURATION
 	local current_remotes, _registry_changed = common.initializeInternalRemotes(current_config.INTERNAL_REMOTE_HANDLER)
 
-    local _onRemoteRegistryChanged
+	local _registration_event: "OnServerEvent" | "OnClientEvent" = nil
+	local _remote_refs: types.RemoteRegistry = ({} :: any)
+	local _registering_funcs: {
+		["reliable"]: (...any) -> (),
+		["unreliable"]: (...any) -> (),
+	} = ({} :: any)
 
     if IS_SERVER then
-        local function onReliableServerEvent(sender: Player, id: string, ...)
+		_registration_event = "OnServerEvent"
+
+        _registering_funcs.reliable = function(sender: Player, id: string, ...)
             table.insert(incoming_packets, {
                 type = ("reliable" :: any),
                 id = id,
@@ -239,42 +246,43 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
                 sender = sender
             })
         end
-    
-        local function onUnreliableServerEvent(sender: Player, id: string, ...)
+        _registering_funcs.unreliable = function(sender: Player, id: string, ...)
             table.insert(incoming_packets, {
                 type = ("unreliable" :: any),
                 id = id,
                 args = {...},
                 sender = sender
             })
-        end
-
-        function _onRemoteRegistryChanged()
-            current_remotes.reliable.OnServerEvent:Connect(onReliableServerEvent)
-            current_remotes.unreliable.OnServerEvent:Connect(onUnreliableServerEvent)
         end
     else
-        local function onReliableClientEvent(id: string, ...)
+		_registration_event = "OnClientEvent"
+
+        _registering_funcs.reliable = function(id: string, ...)
             table.insert(incoming_packets, {
                 type = ("reliable" :: any),
                 id = id,
                 args = {...},
             })
         end
-    
-        local function onUnreliableClientEvent(id: string, ...)
+        _registering_funcs.unreliable = function(id: string, ...)
             table.insert(incoming_packets, {
                 type = ("unreliable" :: any),
                 id = id,
                 args = {...},
             })
         end
-
-        function _onRemoteRegistryChanged()
-            current_remotes.reliable.OnClientEvent:Connect(onReliableClientEvent)
-            current_remotes.unreliable.OnClientEvent:Connect(onUnreliableClientEvent)
-        end
     end
+
+	local function _onRemoteRegistryChanged()
+		for remote_type: any, remote_obj: any in current_remotes do
+			if _remote_refs[remote_type] == remote_obj then
+				continue
+			end
+
+			_remote_refs[remote_type] = remote_obj
+			remote_obj[_registration_event]:Connect(_registering_funcs[remote_type])
+		end
+	end
 
 	RunService.PostSimulation:Connect(function()
 		for _ = 1, current_config.INCOMING_PACKET_THRESHOLD do
@@ -309,7 +317,7 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
                     -- this is not allowed (on server-side)
                     continue
                 end
-    
+
                 for _, target in outcoming_packet.targets do
                     current_remotes[outcoming_packet.type]:FireClient(target, outcoming_packet.id, unpack(outcoming_packet.args))
                 end
