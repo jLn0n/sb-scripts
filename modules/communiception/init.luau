@@ -228,6 +228,7 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
 	local current_config = config or common.DEFAULT_CONFIGURATION
 	local current_remotes, _registry_changed = common.initializeInternalRemotes(current_config.INTERNAL_REMOTE_HANDLER)
 
+	local __RBXSignalConnect = _registry_changed.Event.Connect
 	local _registration_event: "OnServerEvent" | "OnClientEvent" = nil
 	local _remote_refs: types.RemoteRegistry = ({} :: any)
 	local _registering_funcs: {
@@ -280,7 +281,8 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
 			end
 
 			_remote_refs[remote_type] = remote_obj
-			remote_obj[_registration_event]:Connect(_registering_funcs[remote_type])
+			print("REMOTE REGISTRATION!!!", remote_type, remote_obj, _registration_event)
+			__RBXSignalConnect(remote_obj[_registration_event], _registering_funcs[remote_type])
 		end
 	end
 
