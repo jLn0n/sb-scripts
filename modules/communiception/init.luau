@@ -275,18 +275,13 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
     end
 
 	local function _onRemoteRegistryChanged()
-		for remote_type: any, remote_obj: any in current_remotes do
+		for remote_type, remote_obj in pairs(current_remotes) do
 			if _remote_refs[remote_type] == remote_obj then
 				continue
 			end
 
-			print("REMOTE REGISTRATION!!!", remote_type, remote_obj, _registration_event)
-			print(remote_obj[_registration_event], _registering_funcs[remote_type])
-			print("here before setting my clockers")
 			_remote_refs[remote_type] = remote_obj
-			print("clockers set!", "here before registering my clockers")
 			__RBXSignalConnect(remote_obj[_registration_event], _registering_funcs[remote_type])
-			print("clockers registered!")
 		end
 	end
 
