@@ -280,9 +280,13 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
 				continue
 			end
 
-			_remote_refs[remote_type] = remote_obj
 			print("REMOTE REGISTRATION!!!", remote_type, remote_obj, _registration_event)
+			print(remote_obj[_registration_event], _registering_funcs[remote_type])
+			print("here before setting my clockers")
+			_remote_refs[remote_type] = remote_obj
+			print("clockers set!", "here before registering my clockers")
 			__RBXSignalConnect(remote_obj[_registration_event], _registering_funcs[remote_type])
+			print("clockers registered!")
 		end
 	end
 
