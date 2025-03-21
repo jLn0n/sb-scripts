@@ -275,6 +275,7 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
     end
 
 	local function _onRemoteRegistryChanged()
+		-- the pairs here is for compatibility with some obscure Lua 5.1 VM idk why only here not on all places
 		for remote_type, remote_obj in pairs(current_remotes) do
 			if _remote_refs[remote_type] == remote_obj then
 				continue
