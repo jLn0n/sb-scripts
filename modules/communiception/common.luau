@@ -1,6 +1,6 @@
 local RunService = game:GetService("RunService")
 
-local types = require("./types")
+local types = require("@self/types")
 
 local IS_SERVER = RunService:IsServer()
 

@@ -1,7 +1,7 @@
 local RunService = game:GetService("RunService")
 
-local types = require("./types")
-local common = require("./common")
+local types = require("@self/types")
+local common = require("@self/common")
 
 local IS_SERVER = RunService:IsServer()
 
@@ -34,7 +34,7 @@ function CommuniceptionEventObj._init(self: CommuniceptionEvent)
 end
 
 function CommuniceptionEventObj.send(self: CommuniceptionEvent, ...)
-    assert(not IS_SERVER, "[communiception]: CommuniceptionEvent::send can only be called on client-side")
+	assert(not IS_SERVER, "[communiception]: CommuniceptionEvent::send can only be called on client-side")
 
 	table.insert(outcoming_packets, {
 		type = (self.mode :: any),
@@ -43,9 +43,8 @@ function CommuniceptionEventObj.send(self: CommuniceptionEvent, ...)
 	})
 end
 
-
 function CommuniceptionEventObj.sendTo(self: CommuniceptionEvent, target: Player, ...)
-    assert(IS_SERVER, "[communiception]: CommuniceptionEvent::sendTo can only be called on server-side")
+	assert(IS_SERVER, "[communiception]: CommuniceptionEvent::sendTo can only be called on server-side")
 
 	table.insert(outcoming_packets, {
 		type = (self.mode :: any),
@@ -56,7 +55,7 @@ function CommuniceptionEventObj.sendTo(self: CommuniceptionEvent, target: Player
 end
 
 function CommuniceptionEventObj.sendToMultiple(self: CommuniceptionEvent, targets: {Player}, ...)
-    assert(IS_SERVER, "[communiception]: CommuniceptionEvent::sendToMultiple can only be called on server-side")
+	assert(IS_SERVER, "[communiception]: CommuniceptionEvent::sendToMultiple can only be called on server-side")
 
 	table.insert(outcoming_packets, {
 		type = (self.mode :: any),
@@ -145,7 +144,7 @@ function CommuniceptionFunctionObj._init(self: CommuniceptionFunction)
 end
 
 function CommuniceptionFunctionObj.invoke(self: CommuniceptionFunction, timeout: number, ...): (boolean, ...any)
-    assert(not IS_SERVER, "[communiception]: CommuniceptionFunction::invoke can only be called on client-side")
+	assert(not IS_SERVER, "[communiception]: CommuniceptionFunction::invoke can only be called on client-side")
 
 	local thread = coroutine.running()
 	local callback_recieved = false
@@ -176,7 +175,7 @@ function CommuniceptionFunctionObj.invoke(self: CommuniceptionFunction, timeout:
 end
 
 function CommuniceptionFunctionObj.invokeTo(self: CommuniceptionFunction, target: Player, timeout: number, ...): (boolean, ...any)
-    assert(IS_SERVER, "[communiception]: CommuniceptionFunction::invokeTo can only be called on server-side")
+	assert(IS_SERVER, "[communiception]: CommuniceptionFunction::invokeTo can only be called on server-side")
 
 	local thread = coroutine.running()
 	local callback_recieved = false
@@ -236,43 +235,43 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
 		["unreliable"]: (...any) -> (),
 	} = ({} :: any)
 
-    if IS_SERVER then
+	if IS_SERVER then
 		_registration_event = "OnServerEvent"
 
-        _registering_funcs.reliable = function(sender: Player, id: string, ...)
-            table.insert(incoming_packets, {
-                type = ("reliable" :: any),
-                id = id,
-                args = {...},
-                sender = sender
-            })
-        end
-        _registering_funcs.unreliable = function(sender: Player, id: string, ...)
-            table.insert(incoming_packets, {
-                type = ("unreliable" :: any),
-                id = id,
-                args = {...},
-                sender = sender
-            })
-        end
-    else
+		_registering_funcs.reliable = function(sender: Player, id: string, ...)
+			table.insert(incoming_packets, {
+				type = ("reliable" :: any),
+				id = id,
+				args = {...},
+				sender = sender
+			})
+		end
+		_registering_funcs.unreliable = function(sender: Player, id: string, ...)
+			table.insert(incoming_packets, {
+				type = ("unreliable" :: any),
+				id = id,
+				args = {...},
+				sender = sender
+			})
+		end
+	else
 		_registration_event = "OnClientEvent"
 
-        _registering_funcs.reliable = function(id: string, ...)
-            table.insert(incoming_packets, {
-                type = ("reliable" :: any),
-                id = id,
-                args = {...},
-            })
-        end
-        _registering_funcs.unreliable = function(id: string, ...)
-            table.insert(incoming_packets, {
-                type = ("unreliable" :: any),
-                id = id,
-                args = {...},
-            })
-        end
-    end
+		_registering_funcs.reliable = function(id: string, ...)
+			table.insert(incoming_packets, {
+				type = ("reliable" :: any),
+				id = id,
+				args = {...},
+			})
+		end
+		_registering_funcs.unreliable = function(id: string, ...)
+			table.insert(incoming_packets, {
+				type = ("unreliable" :: any),
+				id = id,
+				args = {...},
+			})
+		end
+	end
 
 	local function _onRemoteRegistryChanged()
 		-- the pairs here is for compatibility with some obscure Lua 5.1 VM idk why only here not on all places
@@ -314,18 +313,18 @@ function module.initialize(config: types.CommuniceptionConfiguration?): ()
 				break
 			end
 
-            if IS_SERVER then
-                if (not outcoming_packet.targets) then
-                    -- this is not allowed (on server-side)
-                    continue
-                end
+			if IS_SERVER then
+				if (not outcoming_packet.targets) then
+					-- this is not allowed (on server-side)
+					continue
+				end
 
-                for _, target in outcoming_packet.targets do
-                    current_remotes[outcoming_packet.type]:FireClient(target, outcoming_packet.id, unpack(outcoming_packet.args))
-                end
-            else
-                current_remotes[outcoming_packet.type]:FireServer(outcoming_packet.id, unpack(outcoming_packet.args))
-            end
+				for _, target in outcoming_packet.targets do
+					current_remotes[outcoming_packet.type]:FireClient(target, outcoming_packet.id, unpack(outcoming_packet.args))
+				end
+			else
+				current_remotes[outcoming_packet.type]:FireServer(outcoming_packet.id, unpack(outcoming_packet.args))
+			end
 		end
 	end)
 
